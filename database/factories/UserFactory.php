@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\RoleName;
+use App\Models\Club;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -34,6 +36,37 @@ class UserFactory extends Factory
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at' => null,
         ];
+    }
+
+    public function administrator(): static
+    {
+        return $this->withRole(RoleName::Administrator);
+    }
+
+    public function manager(): static
+    {
+        return $this->withRole(RoleName::Manager);
+    }
+
+    public function clubAccessFor(Club $club): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'club_id' => $club->id,
+        ])->withRole(RoleName::Club);
+    }
+
+    public function memberOf(Club $club): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'club_id' => $club->id,
+        ])->withRole(RoleName::User);
+    }
+
+    public function withRole(RoleName $role): static
+    {
+        return $this->afterCreating(function (User $user) use ($role): void {
+            $user->syncRoles([$role]);
+        });
     }
 
     /**

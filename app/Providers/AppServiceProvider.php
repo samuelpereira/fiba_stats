@@ -31,6 +31,8 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function configureDefaults(): void
     {
+        $this->configureLocalization();
+
         Date::use(CarbonImmutable::class);
 
         DB::prohibitDestructiveCommands(
@@ -46,5 +48,13 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
+    }
+
+    /**
+     * Published language files must not align array arrows, or Pint rejects them.
+     */
+    protected function configureLocalization(): void
+    {
+        config(['localization.align' => false]);
     }
 }
