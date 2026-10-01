@@ -1,0 +1,158 @@
+<?php
+
+use App\Enums\GameStatus;
+use App\Enums\HomeAway;
+use App\Livewire\Games\Create as CreateGame;
+use App\Livewire\Games\Edit as EditGame;
+use App\Livewire\Games\Index as GameIndex;
+use App\Livewire\Teams\Index as TeamIndex;
+use App\Models\Club;
+use App\Models\Game;
+use App\Models\Team;
+use App\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
+use Livewire\Livewire;
+
+beforeEach(function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+});
+
+test('a club role creates a game for its own team', function () {
+    $club = Club::factory()->create();
+    $access = User::factory()->clubAccessFor($club)->create();
+    $team = Team::factory()->create(['club_id' => $club->id]);
+
+    Livewire::actingAs($access)
+        ->test(CreateGame::class)
+        ->set('teamId', (string) $team->id)
+        ->set('fpbId', 'FPB-1')
+        ->set('opponent', 'Benfica')
+        ->set('dateTime', '2026-10-04T18:30')
+        ->set('place', 'Pavilhão')
+        ->set('homeAway', HomeAway::Home->value)
+        ->set('competition', 'CN1')
+        ->set('journey', '1')
+        ->set('status', GameStatus::Scheduled->value)
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertRedirect(route('games.index'));
+
+    $game = Game::query()->where('opponent', 'Benfica')->first();
+
+    expect($game)->not->toBeNull()
+        ->and($game->team_id)->toBe($team->id)
+        ->and($game->fpb_id)->toBe('FPB-1')
+        ->and($game->date_time->format('Y-m-d H:i'))->toBe('2026-10-04 18:30')
+        ->and($game->place)->toBe('Pavilhão')
+        ->and($game->home_away)->toBe(HomeAway::Home)
+        ->and($game->competition)->toBe('CN1')
+        ->and($game->journey)->toBe('1')
+        ->and($game->home_points)->toBeNull()
+        ->and($game->away_points)->toBeNull()
+        ->and($game->status)->toBe(GameStatus::Scheduled);
+});
+
+test('a club role cannot create a game for another club team', function () {
+    $club = Club::factory()->create();
+    $access = User::factory()->clubAccessFor($club)->create();
+    $otherTeam = Team::factory()->create();
+
+    Livewire::actingAs($access)
+        ->test(CreateGame::class)
+        ->set('opponent', 'Benfica')
+        ->set('dateTime', '2026-10-04T18:30')
+        ->set('homeAway', HomeAway::Away->value)
+        ->set('status', GameStatus::Scheduled->value)
+        ->set('teamId', (string) $otherTeam->id)
+        ->call('save')
+        ->assertForbidden();
+});
+
+test('a user role cannot open games', function () {
+    $member = User::factory()->memberOf(Club::factory()->create())->create();
+
+    $this->actingAs($member)->get(route('games.index'))->assertForbidden();
+});
+
+test('an administrator records the score of a game', function () {
+    $administrator = User::factory()->administrator()->create();
+    $game = Game::factory()->create();
+
+    Livewire::actingAs($administrator)
+        ->test(EditGame::class, ['game' => $game])
+        ->set('homePoints', '78')
+        ->set('awayPoints', '71')
+        ->set('status', GameStatus::Played->value)
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertRedirect(route('games.index'));
+
+    $game->refresh();
+
+    expect($game->home_points)->toBe(78)
+        ->and($game->away_points)->toBe(71)
+        ->and($game->status)->toBe(GameStatus::Played)
+        ->and($game->score())->toBe('78–71');
+});
+
+test('a repeated fpb id is rejected', function () {
+    $administrator = User::factory()->administrator()->create();
+    $team = Team::factory()->create();
+    Game::factory()->create([
+        'team_id' => $team->id,
+        'fpb_id' => 'FPB-9',
+    ]);
+
+    Livewire::actingAs($administrator)
+        ->test(CreateGame::class)
+        ->set('teamId', (string) $team->id)
+        ->set('opponent', 'Porto')
+        ->set('dateTime', '2026-10-04T18:30')
+        ->set('homeAway', HomeAway::Home->value)
+        ->set('status', GameStatus::Scheduled->value)
+        ->set('fpbId', 'FPB-9')
+        ->call('save')
+        ->assertHasErrors('fpbId');
+});
+
+test('a club only sees games of its own teams', function () {
+    $club = Club::factory()->create();
+    $access = User::factory()->clubAccessFor($club)->create();
+    $team = Team::factory()->create(['club_id' => $club->id]);
+    $ownGame = Game::factory()->create([
+        'team_id' => $team->id,
+        'opponent' => 'Sporting',
+    ]);
+    $otherGame = Game::factory()->create([
+        'opponent' => 'Oponente Externo',
+    ]);
+
+    Livewire::actingAs($access)
+        ->test(GameIndex::class)
+        ->assertSee($ownGame->opponent)
+        ->assertDontSee($otherGame->opponent);
+});
+
+test('an administrator can delete a game', function () {
+    $administrator = User::factory()->administrator()->create();
+    $game = Game::factory()->create();
+
+    Livewire::actingAs($administrator)
+        ->test(GameIndex::class)
+        ->call('confirmDelete', $game->id)
+        ->call('deleteConfirmed');
+
+    expect(Game::query()->find($game->id))->toBeNull();
+});
+
+test('an administrator cannot delete a team that still has games', function () {
+    $administrator = User::factory()->administrator()->create();
+    $game = Game::factory()->create();
+
+    Livewire::actingAs($administrator)
+        ->test(TeamIndex::class)
+        ->call('confirmDelete', $game->team_id)
+        ->call('deleteConfirmed');
+
+    expect(Team::query()->find($game->team_id))->not->toBeNull();
+});

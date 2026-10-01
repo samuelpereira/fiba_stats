@@ -30,7 +30,14 @@ class UserPolicy
 
     public function delete(User $user, User $model): bool
     {
-        return false;
+        return $user->isNot($model) && $this->manages($user, $model);
+    }
+
+    public function deleteStaff(User $user, User $model): bool
+    {
+        return $user->hasRole(RoleName::Administrator)
+            && $user->isNot($model)
+            && in_array($model->assignedRole(), RoleName::staff(), true);
     }
 
     public function viewAnyStaff(User $user): bool

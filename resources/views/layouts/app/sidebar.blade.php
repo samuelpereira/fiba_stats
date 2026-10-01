@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         @include('partials.head')
     </head>
@@ -28,6 +28,25 @@
                     @can(\App\Enums\PermissionName::CreateUsers->value)
                         <flux:sidebar.item icon="users" :href="route('users.index')" :current="request()->routeIs('users.*')" wire:navigate>
                             {{ __('Users') }}
+                        </flux:sidebar.item>
+                    @endcan
+                </flux:sidebar.group>
+
+                <flux:sidebar.group :heading="__('Competition')" class="grid">
+                    @can(\App\Enums\PermissionName::CreateClubs->value)
+                        <flux:sidebar.item icon="calendar" :href="route('seasons.index')" :current="request()->routeIs('seasons.*')" wire:navigate>
+                            {{ __('Seasons') }}
+                        </flux:sidebar.item>
+                    @endcan
+                    @can(\App\Enums\PermissionName::CreateUsers->value)
+                        <flux:sidebar.item icon="user-group" :href="route('teams.index')" :current="request()->routeIs('teams.*')" wire:navigate>
+                            {{ __('Teams') }}
+                        </flux:sidebar.item>
+                        <flux:sidebar.item icon="identification" :href="route('players.index')" :current="request()->routeIs('players.*')" wire:navigate>
+                            {{ __('Players') }}
+                        </flux:sidebar.item>
+                        <flux:sidebar.item icon="trophy" :href="route('games.index')" :current="request()->routeIs('games.*')" wire:navigate>
+                            {{ __('Games') }}
                         </flux:sidebar.item>
                     @endcan
                 </flux:sidebar.group>

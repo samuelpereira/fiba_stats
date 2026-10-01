@@ -30,6 +30,6 @@ class ClubPolicy
 
     public function delete(User $user, Club $club): bool
     {
-        return false;
+        return $user->can(PermissionName::CreateClubs->value);
     }
 }

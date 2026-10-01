@@ -33,6 +33,14 @@ class Club extends Model
     }
 
     /**
+     * @return HasMany<Team, $this>
+     */
+    public function teams(): HasMany
+    {
+        return $this->hasMany(Team::class);
+    }
+
+    /**
      * The club role allowed to create this club's users.
      *
      * @return HasOne<User, $this>

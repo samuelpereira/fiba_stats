@@ -298,3 +298,26 @@ test('an administrator cannot disable their own account', function () {
 
     expect($administrator->refresh()->enabled)->toBeTrue();
 });
+
+test('an administrator can delete a club user', function () {
+    $administrator = User::factory()->administrator()->create();
+    $member = User::factory()->memberOf(Club::factory()->create())->create();
+
+    Livewire::actingAs($administrator)
+        ->test(UserIndex::class)
+        ->call('confirmDelete', $member->id)
+        ->call('deleteConfirmed');
+
+    expect(User::query()->find($member->id))->toBeNull();
+});
+
+test('an administrator cannot delete their own account', function () {
+    $administrator = User::factory()->administrator()->create();
+
+    Livewire::actingAs($administrator)
+        ->test(AdministratorIndex::class)
+        ->call('confirmDelete', $administrator->id)
+        ->assertForbidden();
+
+    expect(User::query()->find($administrator->id))->not->toBeNull();
+});
