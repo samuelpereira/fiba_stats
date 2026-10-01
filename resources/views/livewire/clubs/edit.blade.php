@@ -8,6 +8,8 @@
 
         <flux:input wire:model="accessEmail" :label="__('Access email')" type="email" required autocomplete="off" />
 
+        <flux:switch wire:model="accessEnabled" :label="__('Enabled')" :description="__('Disabled accounts cannot sign in.')" />
+
         <flux:input wire:model="password" :label="__('Password')" type="password" autocomplete="new-password" viewable :description="__('Leave blank to keep the current password.')" />
 
         <flux:input wire:model="password_confirmation" :label="__('Confirm password')" type="password" autocomplete="new-password" viewable />

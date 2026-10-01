@@ -6,7 +6,9 @@ use App\Livewire\Administrators\Create as CreateAdministrator;
 use App\Livewire\Administrators\Edit as EditAdministrator;
 use App\Livewire\Administrators\Index as AdministratorIndex;
 use App\Livewire\Clubs\Create as CreateClub;
+use App\Livewire\Clubs\Edit as EditClub;
 use App\Livewire\Users\Create as CreateUser;
+use App\Livewire\Users\Edit as EditUser;
 use App\Livewire\Users\Index as UserIndex;
 use App\Models\Club;
 use App\Models\User;
@@ -245,4 +247,54 @@ test('an administrator can change a manager into an administrator', function () 
     expect($manager->hasRole(RoleName::Administrator))->toBeTrue()
         ->and($manager->hasRole(RoleName::Manager))->toBeFalse()
         ->and($manager->club_id)->toBeNull();
+});
+
+test('an administrator can disable a user so they cannot sign in', function () {
+    $administrator = User::factory()->administrator()->create();
+    $member = User::factory()->memberOf(Club::factory()->create())->create();
+
+    Livewire::actingAs($administrator)
+        ->test(EditUser::class, ['user' => $member])
+        ->set('enabled', false)
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertRedirect(route('users.index'));
+
+    expect($member->refresh()->enabled)->toBeFalse();
+
+    auth()->logout();
+
+    $this->post(route('login.store'), [
+        'email' => $member->email,
+        'password' => 'password',
+    ])->assertSessionHasErrorsIn('email');
+
+    $this->assertGuest();
+});
+
+test('an administrator can disable a club access', function () {
+    $administrator = User::factory()->administrator()->create();
+    $club = Club::factory()->create();
+    $access = User::factory()->clubAccessFor($club)->create();
+
+    Livewire::actingAs($administrator)
+        ->test(EditClub::class, ['club' => $club])
+        ->set('accessEnabled', false)
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertRedirect(route('clubs.index'));
+
+    expect($access->refresh()->enabled)->toBeFalse();
+});
+
+test('an administrator cannot disable their own account', function () {
+    $administrator = User::factory()->administrator()->create();
+
+    Livewire::actingAs($administrator)
+        ->test(EditAdministrator::class, ['user' => $administrator])
+        ->set('enabled', false)
+        ->call('save')
+        ->assertForbidden();
+
+    expect($administrator->refresh()->enabled)->toBeTrue();
 });

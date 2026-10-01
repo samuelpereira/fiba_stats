@@ -12,6 +12,7 @@
             <flux:table.column>{{ __('Name') }}</flux:table.column>
             <flux:table.column>{{ __('Email') }}</flux:table.column>
             <flux:table.column>{{ __('Role') }}</flux:table.column>
+            <flux:table.column>{{ __('Enabled') }}</flux:table.column>
             <flux:table.column></flux:table.column>
         </flux:table.columns>
 
@@ -22,6 +23,9 @@
                     <flux:table.cell>{{ $administrator->email }}</flux:table.cell>
                     <flux:table.cell>{{ __($administrator->assignedRole()->label()) }}</flux:table.cell>
                     <flux:table.cell>
+                        <flux:badge :color="$administrator->enabled ? 'green' : 'red'" size="sm">{{ $administrator->enabled ? __('Enabled') : __('Disabled') }}</flux:badge>
+                    </flux:table.cell>
+                    <flux:table.cell>
                         <flux:button size="sm" :href="route('administrators.edit', $administrator)" wire:navigate>
                             {{ __('Edit') }}
                         </flux:button>
@@ -29,7 +33,7 @@
                 </flux:table.row>
             @empty
                 <flux:table.row>
-                    <flux:table.cell colspan="4">{{ __('No administrators yet.') }}</flux:table.cell>
+                    <flux:table.cell colspan="5">{{ __('No administrators yet.') }}</flux:table.cell>
                 </flux:table.row>
             @endforelse
         </flux:table.rows>

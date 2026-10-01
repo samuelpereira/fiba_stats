@@ -11,7 +11,7 @@ class UpdateStaffMember
     /**
      * Update an administrator or a manager. An administrator cannot remove their own administrator role.
      */
-    public function handle(User $actor, User $user, string $name, string $email, RoleName $role, ?string $password = null): User
+    public function handle(User $actor, User $user, string $name, string $email, RoleName $role, bool $enabled, ?string $password = null): User
     {
         $currentRole = $user->assignedRole();
 
@@ -19,12 +19,13 @@ class UpdateStaffMember
             throw new AuthorizationException;
         }
 
-        if ($actor->is($user) && $role !== RoleName::Administrator) {
+        if ($actor->is($user) && ($role !== RoleName::Administrator || ! $enabled)) {
             throw new AuthorizationException;
         }
 
         $user->name = $name;
         $user->email = $email;
+        $user->enabled = $enabled;
         $user->club_id = null;
 
         if (is_string($password) && $password !== '') {

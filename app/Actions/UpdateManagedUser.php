@@ -13,7 +13,7 @@ class UpdateManagedUser
     /**
      * Update a user-role account. A club role cannot move the user to another club.
      */
-    public function handle(User $actor, User $user, string $name, string $email, ?string $password = null, ?int $clubId = null): User
+    public function handle(User $actor, User $user, string $name, string $email, bool $enabled, ?string $password = null, ?int $clubId = null): User
     {
         if (! $user->hasRole(RoleName::User)) {
             throw new AuthorizationException;
@@ -23,8 +23,13 @@ class UpdateManagedUser
             throw new AuthorizationException;
         }
 
+        if ($actor->is($user) && ! $enabled) {
+            throw new AuthorizationException;
+        }
+
         $user->name = $name;
         $user->email = $email;
+        $user->enabled = $enabled;
 
         if ($actor->can(PermissionName::CreateClubs->value)) {
             $club = Club::query()->find($clubId);

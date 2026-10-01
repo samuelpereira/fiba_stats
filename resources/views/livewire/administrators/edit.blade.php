@@ -7,6 +7,8 @@
         <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="off" />
 
         @if ($this->showRoleField)
+            <flux:switch wire:model="enabled" :label="__('Enabled')" :description="__('Disabled accounts cannot sign in.')" />
+
             <flux:select wire:model="role" :label="__('Role')" required>
                 @foreach (\App\Enums\RoleName::staff() as $role)
                     <flux:select.option :value="$role->value">{{ __($role->label()) }}</flux:select.option>

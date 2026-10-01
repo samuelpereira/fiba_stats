@@ -22,6 +22,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $email
  * @property int|null $club_id
  * @property string|null $locale
+ * @property bool $enabled
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property string|null $two_factor_secret
@@ -49,6 +50,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'enabled' => 'boolean',
         ];
     }
 

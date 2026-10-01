@@ -14,6 +14,7 @@
             @can(\App\Enums\PermissionName::CreateClubs->value)
                 <flux:table.column>{{ __('Club') }}</flux:table.column>
             @endcan
+            <flux:table.column>{{ __('Enabled') }}</flux:table.column>
             <flux:table.column></flux:table.column>
         </flux:table.columns>
 
@@ -26,6 +27,9 @@
                         <flux:table.cell>{{ $user->club?->name }}</flux:table.cell>
                     @endcan
                     <flux:table.cell>
+                        <flux:badge :color="$user->enabled ? 'green' : 'red'" size="sm">{{ $user->enabled ? __('Enabled') : __('Disabled') }}</flux:badge>
+                    </flux:table.cell>
+                    <flux:table.cell>
                         <flux:button size="sm" :href="route('users.edit', $user)" wire:navigate>
                             {{ __('Edit') }}
                         </flux:button>
@@ -33,7 +37,7 @@
                 </flux:table.row>
             @empty
                 <flux:table.row>
-                    <flux:table.cell colspan="{{ auth()->user()->can(\App\Enums\PermissionName::CreateClubs->value) ? 4 : 3 }}">{{ __('No users yet.') }}</flux:table.cell>
+                    <flux:table.cell colspan="{{ auth()->user()->can(\App\Enums\PermissionName::CreateClubs->value) ? 5 : 4 }}">{{ __('No users yet.') }}</flux:table.cell>
                 </flux:table.row>
             @endforelse
         </flux:table.rows>

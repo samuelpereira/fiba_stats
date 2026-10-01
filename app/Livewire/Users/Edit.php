@@ -35,6 +35,8 @@ class Edit extends Component
 
     public string $clubId = '';
 
+    public bool $enabled = true;
+
     public function mount(User $user): void
     {
         $this->authorize('update', $user);
@@ -43,6 +45,7 @@ class Edit extends Component
         $this->name = $user->name;
         $this->email = $user->email;
         $this->clubId = (string) $user->club_id;
+        $this->enabled = $user->enabled;
     }
 
     public function save(UpdateManagedUser $updateManagedUser): void
@@ -54,6 +57,7 @@ class Edit extends Component
         $rules = [
             'name' => $this->nameRules(),
             'email' => $this->emailRules($this->user->id),
+            'enabled' => ['boolean'],
         ];
 
         if ($this->password !== '') {
@@ -71,6 +75,7 @@ class Edit extends Component
             $this->user,
             $validated['name'],
             $validated['email'],
+            (bool) $validated['enabled'],
             $validated['password'] ?? null,
             $actor->can(PermissionName::CreateClubs->value) ? (int) $validated['clubId'] : null,
         );

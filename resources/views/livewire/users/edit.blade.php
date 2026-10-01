@@ -14,6 +14,10 @@
             </flux:select>
         @endcan
 
+        @if (auth()->id() !== $user->id)
+            <flux:switch wire:model="enabled" :label="__('Enabled')" :description="__('Disabled accounts cannot sign in.')" />
+        @endif
+
         <flux:input wire:model="password" :label="__('Password')" type="password" autocomplete="new-password" viewable :description="__('Leave blank to keep the current password.')" />
 
         <flux:input wire:model="password_confirmation" :label="__('Confirm password')" type="password" autocomplete="new-password" viewable />

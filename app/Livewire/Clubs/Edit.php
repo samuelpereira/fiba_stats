@@ -4,6 +4,7 @@ namespace App\Livewire\Clubs;
 
 use App\Actions\UpdateClub;
 use App\Concerns\ProfileValidationRules;
+use App\Livewire\Concerns\InteractsWithAuthenticatedUser;
 use App\Models\Club;
 use Flux\Flux;
 use Illuminate\Validation\Rules\Password;
@@ -14,7 +15,7 @@ use Livewire\Component;
 #[Title('Edit club')]
 class Edit extends Component
 {
-    use ProfileValidationRules;
+    use InteractsWithAuthenticatedUser, ProfileValidationRules;
 
     #[Locked]
     public Club $club;
@@ -29,6 +30,8 @@ class Edit extends Component
 
     public string $password_confirmation = '';
 
+    public bool $accessEnabled = true;
+
     public function mount(Club $club): void
     {
         $this->authorize('update', $club);
@@ -39,6 +42,7 @@ class Edit extends Component
         $this->name = $club->name;
         $this->accessName = $access->name;
         $this->accessEmail = $access->email;
+        $this->accessEnabled = $access->enabled;
     }
 
     public function save(UpdateClub $updateClub): void
@@ -51,6 +55,7 @@ class Edit extends Component
             'name' => $this->nameRules(),
             'accessName' => $this->nameRules(),
             'accessEmail' => $this->emailRules($access->id),
+            'accessEnabled' => ['boolean'],
         ];
 
         if ($this->password !== '') {
@@ -60,10 +65,12 @@ class Edit extends Component
         $validated = $this->validate($rules);
 
         $updateClub->handle(
+            $this->actor(),
             $this->club,
             $validated['name'],
             $validated['accessName'],
             $validated['accessEmail'],
+            (bool) $validated['accessEnabled'],
             $validated['password'] ?? null,
         );
 

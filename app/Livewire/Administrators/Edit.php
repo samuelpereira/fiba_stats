@@ -33,6 +33,8 @@ class Edit extends Component
 
     public string $role = '';
 
+    public bool $enabled = true;
+
     public function mount(User $user): void
     {
         $this->authorize('updateStaff', $user);
@@ -43,6 +45,7 @@ class Edit extends Component
         $this->name = $user->name;
         $this->email = $user->email;
         $this->role = $assignedRole instanceof RoleName ? $assignedRole->value : RoleName::Administrator->value;
+        $this->enabled = $user->enabled;
     }
 
     public function save(UpdateStaffMember $updateStaffMember): void
@@ -52,6 +55,7 @@ class Edit extends Component
         $rules = [
             'name' => $this->nameRules(),
             'email' => $this->emailRules($this->user->id),
+            'enabled' => ['boolean'],
         ];
 
         if ($this->password !== '') {
@@ -74,6 +78,7 @@ class Edit extends Component
             $validated['name'],
             $validated['email'],
             $role,
+            (bool) $validated['enabled'],
             $validated['password'] ?? null,
         );
 
