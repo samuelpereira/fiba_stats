@@ -27,7 +27,7 @@
         aria-label="{{ __('Half court') }}"
         @click="mark($event)"
     >
-        <rect width="{{ \App\Support\ShotCourt::Width }}" height="{{ \App\Support\ShotCourt::Height }}" fill="transparent" />
-        <x-half-court-markings stroke="#ffffff" three-point-stroke="#2ec4b6" />
+        <rect width="{{ \App\Support\ShotCourt::Width }}" height="{{ \App\Support\ShotCourt::Height }}" fill="#ffffff" />
+        <x-half-court-markings stroke="#4a4867" three-point-stroke="#4a4867" />
     </svg>
 </div>
