@@ -15,8 +15,8 @@
                 <flux:heading>{{ __('Language') }}</flux:heading>
 
                 <flux:radio.group wire:model.live="locale" variant="segmented">
-                    @foreach (\LaravelLang\Locales\Facades\Locales::installed() as $installedLocale)
-                        <flux:radio :value="$installedLocale->code">{{ $installedLocale->native }}</flux:radio>
+                    @foreach (\App\Support\Locale::supported() as $code => $label)
+                        <flux:radio :value="$code">{{ $label }}</flux:radio>
                     @endforeach
                 </flux:radio.group>
             </div>

@@ -3,7 +3,7 @@
 namespace App\Livewire\Settings;
 
 use App\Livewire\Concerns\InteractsWithAuthenticatedUser;
-use LaravelLang\Locales\Facades\Locales;
+use App\Support\Locale;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -21,7 +21,7 @@ class Appearance extends Component
 
     public function updatedLocale(string $locale): void
     {
-        abort_unless(Locales::isInstalled($locale), 404);
+        abort_unless(Locale::isSupported($locale), 404);
 
         $user = $this->actor();
         $user->locale = $locale;

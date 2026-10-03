@@ -1,12 +1,11 @@
 <?php
 
 use App\Http\Middleware\EnsureUserIsEnabled;
+use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
-use LaravelLang\Routes\Middlewares\LocalizationByModel;
-use LaravelLang\Routes\Middlewares\LocalizationBySession;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
@@ -26,8 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             EnsureUserIsEnabled::class,
-            LocalizationBySession::class,
-            LocalizationByModel::class,
+            SetLocale::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
