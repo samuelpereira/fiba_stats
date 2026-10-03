@@ -3,11 +3,22 @@
 use App\Enums\StatType;
 use App\Support\ShotCourt;
 
-test('two point shots must be inside the three point arc', function () {
+test('two point shots can be marked anywhere inside the court', function () {
     expect(ShotCourt::allows(StatType::TwoPointMade, 500, 300))->toBeTrue()
-        ->and(ShotCourt::allows(StatType::TwoPointMade, 500, 520))->toBeFalse()
-        ->and(ShotCourt::allows(StatType::ThreePointMade, 500, 520))->toBeTrue()
-        ->and(ShotCourt::allows(StatType::ThreePointMade, 500, 300))->toBeFalse();
+        ->and(ShotCourt::allows(StatType::TwoPointMade, 500, 520))->toBeTrue()
+        ->and(ShotCourt::allows(StatType::TwoPointMade, 150, 400))->toBeTrue()
+        ->and(ShotCourt::allows(StatType::TwoPointMissed, 850, 700))->toBeTrue();
+});
+
+test('three point shots must be outside the three point arc', function () {
+    expect(ShotCourt::allows(StatType::ThreePointMade, 500, 520))->toBeTrue()
+        ->and(ShotCourt::allows(StatType::ThreePointMade, 500, 300))->toBeFalse()
+        ->and(ShotCourt::allows(StatType::ThreePointMissed, 150, 400))->toBeTrue();
+});
+
+test('three point shots can be marked in the baseline corners', function () {
+    expect(ShotCourt::allows(StatType::ThreePointMade, 110, ShotCourt::BaselineY))->toBeTrue()
+        ->and(ShotCourt::allows(StatType::ThreePointMade, ShotCourt::Width - 110, ShotCourt::BaselineY))->toBeTrue();
 });
 
 test('a half-court position in feet maps onto the drawn court', function () {

@@ -127,9 +127,9 @@ test('field goals can require marking the shot location on the court', function 
         ->call('select', StatType::TwoPointMade->value)
         ->call('record', $player->id)
         ->assertSet('choosingShotLocation', true)
-        ->call('recordShotLocation', 500, 520)
+        ->call('recordShotLocation', 20, 300)
         ->assertHasErrors(['shotLocation'])
-        ->call('recordShotLocation', 500, 300)
+        ->call('recordShotLocation', 500, 520)
         ->assertHasNoErrors()
         ->assertSet('choosingShotLocation', false)
         ->assertSee('2pt');
@@ -139,7 +139,7 @@ test('field goals can require marking the shot location on the court', function 
     expect($event)->not->toBeNull()
         ->and($event->type)->toBe(StatType::TwoPointMade)
         ->and($event->court_x)->toBe(500)
-        ->and($event->court_y)->toBe(300);
+        ->and($event->court_y)->toBe(520);
 });
 
 test('the log marks a two as fg, a three as 3pt, and a free throw as ft', function () {

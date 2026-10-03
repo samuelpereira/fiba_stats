@@ -105,15 +105,9 @@ class ShotCourt
             return false;
         }
 
-        if ($courtY < self::hoopY()) {
-            return false;
-        }
-
-        $insideThreePointLine = self::isInsideThreePointLine($courtX, $courtY);
-
         return match ($type) {
-            StatType::TwoPointMade, StatType::TwoPointMissed => $insideThreePointLine,
-            StatType::ThreePointMade, StatType::ThreePointMissed => ! $insideThreePointLine,
+            StatType::TwoPointMade, StatType::TwoPointMissed => true,
+            StatType::ThreePointMade, StatType::ThreePointMissed => ! self::isInsideThreePointLine($courtX, $courtY),
             default => false,
         };
     }
