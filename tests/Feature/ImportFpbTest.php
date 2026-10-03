@@ -80,6 +80,38 @@ HTML),
         ->and($game->status)->toBe(GameStatus::Played);
 });
 
+test('fpb games re-import without kickoff time keeps existing date time', function () {
+    Http::fake([
+        'https://fpb.test/equipa' => Http::response(<<<'HTML'
+<h3 class="date">15 OUT 2025</h3>
+<a href="/ficha-de-jogo?internalID=1001">
+<span class="fullName">CA Gondomar</span>
+<span class="fullName">FC Porto</span>
+<div class="results_text">80</div>
+<div class="results_text">70</div>
+</a>
+HTML),
+    ]);
+
+    $team = Team::factory()->create([
+        'name' => 'CA Gondomar',
+        'fpb_url' => 'https://fpb.test/equipa',
+    ]);
+
+    $game = Game::factory()->for($team)->create([
+        'fpb_id' => '1001',
+        'date_time' => '2025-10-15 20:30:00',
+        'home_points' => 75,
+        'away_points' => 70,
+        'status' => GameStatus::Played,
+    ]);
+
+    app(FpbGamesImporter::class)->import($team, prune: false);
+
+    expect($game->fresh()->date_time->format('Y-m-d H:i'))->toBe('2025-10-15 20:30')
+        ->and($game->fresh()->home_points)->toBe(80);
+});
+
 test('team edit can trigger fpb imports from livewire', function () {
     Http::fake([
         'https://fpb.test/equipa' => Http::response(<<<'HTML'

@@ -55,9 +55,16 @@ class FpbGamesImporter
 
             $hasScore = $fixture['pc'] !== null && $fixture['pf'] !== null;
 
+            $game = Game::firstOrNew([
+                'team_id' => $team->id,
+                'fpb_id' => $fixture['id'],
+            ]);
+
+            $exists = $game->exists;
+
             $attributes = [
                 'opponent' => $isHome ? $fixture['away'] : $fixture['home'],
-                'date_time' => $fixture['date_time'],
+                'date_time' => $this->resolveFixtureDateTime($fixture, $exists ? $game->date_time : null),
                 'place' => $fixture['loc'],
                 'home_away' => $isHome ? HomeAway::Home : HomeAway::Away,
                 'competition' => $fixture['comp'],
@@ -65,13 +72,6 @@ class FpbGamesImporter
                 'away_points' => $hasScore ? $fixture['pf'] : null,
                 'status' => $hasScore ? GameStatus::Played : GameStatus::Scheduled,
             ];
-
-            $game = Game::firstOrNew([
-                'team_id' => $team->id,
-                'fpb_id' => $fixture['id'],
-            ]);
-
-            $exists = $game->exists;
 
             if (! $exists) {
                 $game->fill(Game::defaultAttributes());
@@ -342,17 +342,31 @@ class FpbGamesImporter
         }
 
         return array_map(function (array $game): array {
-            $time = $game['time'] ?? '00:00';
-            $game['date_time'] = CarbonImmutable::create(
-                $game['year'],
-                $game['month'],
-                $game['day'],
-                (int) substr($time, 0, 2),
-                (int) substr($time, 3, 2),
-            );
+            $game['date_time'] = $this->resolveFixtureDateTime($game, null);
 
             return $game;
         }, array_values($games));
+    }
+
+    /**
+     * @param  array{year: int, month: int, day: int, time: string|null}  $fixture
+     */
+    protected function resolveFixtureDateTime(array $fixture, ?CarbonImmutable $existing): CarbonImmutable
+    {
+        $date = CarbonImmutable::create($fixture['year'], $fixture['month'], $fixture['day']);
+
+        if ($fixture['time'] !== null) {
+            return $date->setTime(
+                (int) substr($fixture['time'], 0, 2),
+                (int) substr($fixture['time'], 3, 2),
+            );
+        }
+
+        if ($existing !== null) {
+            return $date->setTime($existing->hour, $existing->minute, $existing->second);
+        }
+
+        return $date->startOfDay();
     }
 
     protected function uniquePlayerSlug(Team $team, string $name, ?int $ignorePlayerId = null): string
