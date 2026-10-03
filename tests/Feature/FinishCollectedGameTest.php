@@ -90,3 +90,26 @@ test('exit after the fourth quarter ends can leave without finishing the game', 
 
     expect($game->refresh()->status)->toBe(GameStatus::Scheduled);
 });
+
+test('played game scoreboard uses stored totals once for each team', function () {
+    $club = Club::factory()->create();
+    $member = User::factory()->memberOf($club)->create();
+    $game = Game::factory()->create([
+        'team_id' => Team::factory()->create(['club_id' => $club->id])->id,
+        'home_away' => HomeAway::Home,
+        'status' => GameStatus::Played,
+        'home_points' => 67,
+        'away_points' => 54,
+    ]);
+    $player = Player::factory()->create(['team_id' => $game->team_id]);
+
+    giveStartingFive($game, $player);
+
+    grantStatisticsTeamAccess($member, $game);
+
+    $record = Livewire::actingAs($member)->test(StatisticsRecord::class, ['game' => $game]);
+
+    expect($record->instance()->teamPoints())->toBe(67)
+        ->and($record->instance()->opponentDisplayPoints())->toBe(54);
+
+});

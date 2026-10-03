@@ -156,6 +156,13 @@ class Game extends Model
         return TeamColor::tryFrom($value) ?? $fallback;
     }
 
+    public function ourPoints(): int
+    {
+        $points = $this->home_away === HomeAway::Home ? $this->home_points : $this->away_points;
+
+        return $points ?? 0;
+    }
+
     public function opponentPoints(): int
     {
         $points = $this->home_away === HomeAway::Home ? $this->away_points : $this->home_points;

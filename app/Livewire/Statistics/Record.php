@@ -6,6 +6,7 @@ use App\Actions\DeleteLatestGameEvent;
 use App\Actions\FinishCollectedGame;
 use App\Actions\RecordGameEvent;
 use App\Actions\UpdateGameEventType;
+use App\Enums\GameStatus;
 use App\Enums\HomeAway;
 use App\Enums\StatType;
 use App\Enums\TeamColor;
@@ -1057,11 +1058,19 @@ class Record extends Component
 
     public function teamPoints(): int
     {
+        if ($this->game->status === GameStatus::Played) {
+            return $this->game->ourPoints();
+        }
+
         return $this->pointsFor(false);
     }
 
-    public function opponentLoggedPoints(): int
+    public function opponentDisplayPoints(): int
     {
+        if ($this->game->status === GameStatus::Played) {
+            return $this->game->opponentPoints();
+        }
+
         return $this->pointsFor(true);
     }
 
@@ -1170,7 +1179,7 @@ class Record extends Component
         return view('livewire.statistics.record', [
             'teamName' => $this->game->team->name,
             'opponentName' => $this->game->opponent,
-            'opponentPoints' => $this->game->opponentPoints() + $this->opponentLoggedPoints(),
+            'opponentPoints' => $this->opponentDisplayPoints(),
             'substitutionLabel' => $this->game->events()->exists() ? 'Substitution' : 'Lineup',
             'periodName' => $this->periodName($this->quarter),
             'awaitingPeriodLabel' => $this->awaitingPeriodLabel(),
@@ -1488,7 +1497,7 @@ class Record extends Component
             }
 
             if ($event->type === StatType::QuarterEnded && $event->quarter >= 4) {
-                $flags[$event->quarter + 1] = $team === $this->game->opponentPoints() + $opponent;
+                $flags[$event->quarter + 1] = $team === $opponent;
             }
         }
 
