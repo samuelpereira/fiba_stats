@@ -117,7 +117,7 @@ class Edit extends Component
                 },
             ],
             'teamId' => ['required', 'integer', Rule::exists(Team::class, 'id')],
-            'fpbId' => ['nullable', 'string', 'max:255', Rule::unique(Player::class, 'fpb_id')->ignore($playerId)],
+            'fpbId' => ['nullable', 'string', 'max:255'],
             'dateOfBirth' => ['nullable', 'date', 'before:today'],
             'number' => [
                 'nullable',

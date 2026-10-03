@@ -229,6 +229,30 @@ test('a repeated shirt number on the same team is rejected', function () {
         ->assertHasErrors('number');
 });
 
+test('the same fpb id may be used on more than one player', function () {
+    $administrator = User::factory()->administrator()->create();
+    $teamA = Team::factory()->create();
+    $teamB = Team::factory()->create();
+
+    Livewire::actingAs($administrator)
+        ->test(CreatePlayer::class)
+        ->set('name', 'Player One')
+        ->set('teamId', (string) $teamA->id)
+        ->set('fpbId', '4242')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    Livewire::actingAs($administrator)
+        ->test(CreatePlayer::class)
+        ->set('name', 'Player Two')
+        ->set('teamId', (string) $teamB->id)
+        ->set('fpbId', '4242')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(Player::query()->where('fpb_id', '4242')->count())->toBe(2);
+});
+
 test('an administrator can delete a team without players', function () {
     $administrator = User::factory()->administrator()->create();
     $team = Team::factory()->create();
