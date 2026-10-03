@@ -7,12 +7,14 @@
         <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="off" />
 
         @can(\App\Enums\PermissionName::CreateClubs->value)
-            <flux:select wire:model="clubId" :label="__('Club')" required>
+            <flux:select wire:model.live="clubId" :label="__('Club')" required>
                 @foreach ($this->clubs as $club)
                     <flux:select.option :value="$club->id">{{ $club->name }}</flux:select.option>
                 @endforeach
             </flux:select>
         @endcan
+
+        @include('livewire.users.partials.team-assignment')
 
         @if (auth()->id() !== $user->id)
             <flux:switch wire:model="enabled" :label="__('Enabled')" :description="__('Disabled accounts cannot sign in.')" />

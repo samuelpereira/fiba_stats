@@ -7,8 +7,10 @@ use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -32,6 +34,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Club|null $club
+ * @property-read Collection<int, Team> $teams
  */
 #[Fillable(['name', 'email', 'password', 'club_id'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
@@ -60,6 +63,35 @@ class User extends Authenticatable implements MustVerifyEmail
     public function club(): BelongsTo
     {
         return $this->belongsTo(Club::class);
+    }
+
+    /**
+     * @return BelongsToMany<Team, $this>
+     */
+    public function teams(): BelongsToMany
+    {
+        return $this->belongsToMany(Team::class)->withTimestamps();
+    }
+
+    public function canCollectStatisticsForTeam(Team $team): bool
+    {
+        if ($this->hasRole(RoleName::Administrator)) {
+            return true;
+        }
+
+        if ($this->club_id !== $team->club_id) {
+            return false;
+        }
+
+        if ($this->hasRole(RoleName::Club)) {
+            return true;
+        }
+
+        if ($this->hasRole(RoleName::User)) {
+            return $this->teams()->whereKey($team->id)->exists();
+        }
+
+        return false;
     }
 
     public function assignedRole(): ?RoleName

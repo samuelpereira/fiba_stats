@@ -219,12 +219,8 @@
                                     'border-zinc-300 bg-white hover:border-zinc-900' => ! in_array($player->id, $courtSelection, true),
                                 ])
                             >
-                                <span class="pointer-events-none flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-900 sm:size-14">
-                                    @if ($player->photo_url)
-                                        <img src="{{ $player->photo_url }}" alt="" class="size-full object-cover" />
-                                    @else
-                                        <flux:icon name="user" class="size-5 sm:size-7" />
-                                    @endif
+                                <span class="pointer-events-none flex size-10 shrink-0 items-center justify-center rounded-full border border-zinc-900 sm:size-14">
+                                    <flux:icon name="user" class="size-5 sm:size-7" />
                                 </span>
                                 <span class="min-w-0 flex-1">
                                     <span class="block truncate text-sm font-semibold leading-snug sm:text-base">
@@ -337,7 +333,7 @@
                 <button type="button" wire:click="attemptExit" class="flex size-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 shadow-sm" aria-label="{{ __('Exit') }}">
                     <flux:icon name="power" class="size-5" />
                 </button>
-                <a href="{{ route('statistics.show', $this->game) }}" wire:navigate class="flex size-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 shadow-sm" aria-label="{{ __('Statistics') }}">
+                <a href="{{ route('statistics.show', ['game' => $this->game, 'from' => 'record']) }}" wire:navigate class="flex size-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 shadow-sm" aria-label="{{ __('Statistics') }}">
                     <flux:icon name="chart-bar" class="size-5" />
                 </a>
                 <button type="button" wire:click="openGameSettings" class="flex size-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 shadow-sm" aria-label="{{ __('Game settings') }}">
@@ -393,7 +389,7 @@
             <button type="button" wire:click="attemptExit" class="flex size-12 items-center justify-center rounded-xl bg-white text-zinc-700 shadow-sm" aria-label="{{ __('Exit') }}">
                 <flux:icon name="power" class="size-5" />
             </button>
-            <a href="{{ route('statistics.show', $this->game) }}" wire:navigate class="flex size-12 items-center justify-center rounded-xl bg-white text-zinc-700 shadow-sm" aria-label="{{ __('Statistics') }}">
+            <a href="{{ route('statistics.show', ['game' => $this->game, 'from' => 'record']) }}" wire:navigate class="flex size-12 items-center justify-center rounded-xl bg-white text-zinc-700 shadow-sm" aria-label="{{ __('Statistics') }}">
                 <flux:icon name="chart-bar" class="size-5" />
             </a>
             <button type="button" wire:click="openGameSettings" class="flex size-12 items-center justify-center rounded-xl bg-white text-zinc-700 shadow-sm" aria-label="{{ __('Game settings') }}">
@@ -439,13 +435,12 @@
 </div>
 @endif
 
-<flux:modal wire:model="choosingTimeout" class="statistics-collect-modal max-w-md !bg-white">
+<flux:modal wire:model="choosingTimeout" :closable="false" class="statistics-collect-modal max-w-md !bg-white">
     @php($timeoutAtHome = $this->game->home_away === \App\Enums\HomeAway::Home)
-    <div class="space-y-4 text-zinc-900">
-        <div class="pe-8 text-center">
-            <h2 class="text-base font-semibold">{{ __('Record timeout') }}</h2>
-            <p class="mt-1 text-sm text-zinc-500">{{ __('Select which team called the timeout') }}</p>
-        </div>
+    <div class="flex h-dvh min-h-0 flex-col text-zinc-900">
+        @include('livewire.statistics.partials.collect-modal-header', ['title' => __('Record timeout'), 'cancelAction' => 'cancelChoosingTimeout'])
+        <p class="px-4 text-center text-sm text-zinc-500">{{ __('Select which team called the timeout') }}</p>
+        <div class="flex-1 space-y-3 px-4 py-4">
         <div class="space-y-3">
             <button type="button" wire:click="recordTimeout('home')" class="flex w-full items-center justify-between gap-3 rounded-lg border border-zinc-300 px-4 py-3 text-left hover:border-zinc-900">
                 <span class="min-w-0 truncate text-sm font-medium">{{ $timeoutAtHome ? $teamName : $opponentName }}</span>
@@ -459,121 +454,113 @@
     </div>
 </flux:modal>
 
-<flux:modal wire:model="choosingPlayer" class="statistics-collect-modal w-full max-w-3xl !bg-white lg:[width:min(48rem,calc(100vw-3rem))]">
+<flux:modal wire:model="choosingPlayer" :closable="false" class="statistics-collect-modal !bg-white">
     @if ($pendingStat)
-        <div class="flex max-lg:min-h-[calc(100dvh-2rem)] max-lg:flex-col space-y-4 text-zinc-900">
-            <div class="pe-8 text-center">
-                <h2 class="text-base font-semibold">{{ __($pendingStat->pickerTitle()) }}</h2>
-            </div>
+        <div class="flex h-dvh min-h-0 flex-col text-zinc-900">
+            @include('livewire.statistics.partials.collect-modal-header', ['title' => __($pendingStat->pickerTitle()), 'cancelAction' => 'cancel'])
             @error('clock')
-                <p class="text-center text-xs text-zinc-500">{{ $message }}</p>
+                <p class="px-4 text-center text-xs text-zinc-500">{{ $message }}</p>
             @enderror
-            <div class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto lg:grid lg:max-h-[70vh] lg:grid-cols-2 lg:content-start lg:gap-3">
-                @foreach ($this->courtPlayers as $player)
+            <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-6">
+                <div class="flex flex-col gap-2 sm:grid sm:grid-cols-2 sm:content-start sm:gap-3 lg:grid-cols-3 xl:grid-cols-4">
+                    @foreach ($this->courtPlayers as $player)
+                        <button
+                            type="button"
+                            wire:key="player-{{ $player->id }}"
+                            wire:click="record({{ $player->id }})"
+                            class="flex w-full items-center gap-3 rounded-lg border border-zinc-300 bg-white px-3 py-3 text-left hover:border-zinc-900 sm:rounded-xl sm:py-4"
+                        >
+                            <span class="pointer-events-none flex size-10 shrink-0 items-center justify-center rounded-full border border-zinc-900 sm:size-14">
+                                <flux:icon name="user" class="size-5 sm:size-7" />
+                            </span>
+                            <span class="min-w-0 flex-1">
+                                <span class="block truncate text-sm font-semibold leading-snug sm:text-base">
+                                    @if ($player->number !== null)
+                                        <span class="tabular-nums">#{{ $player->number }}</span>
+                                        <span class="mx-1 text-zinc-400">·</span>
+                                    @endif
+                                    {{ $player->name }}
+                                </span>
+                            </span>
+                        </button>
+                    @endforeach
                     <button
                         type="button"
-                        wire:key="player-{{ $player->id }}"
-                        wire:click="record({{ $player->id }})"
-                        class="flex w-full items-center gap-3 rounded-lg border border-zinc-300 bg-white px-3 py-3 text-left hover:border-zinc-900 lg:rounded-xl"
+                        wire:click="recordOpponent"
+                        class="flex w-full items-center gap-3 rounded-lg border border-zinc-300 bg-white px-3 py-3 text-left hover:border-zinc-900 sm:rounded-xl sm:py-4"
                     >
-                        <span class="pointer-events-none flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-900 lg:size-14">
-                            @if ($player->photo_url)
-                                <img src="{{ $player->photo_url }}" alt="" class="size-full object-cover" />
-                            @else
-                                <flux:icon name="user" class="size-5 lg:size-7" />
-                            @endif
+                        <span class="pointer-events-none flex size-10 shrink-0 items-center justify-center rounded-full border border-zinc-900 sm:size-14">
+                            <flux:icon name="user-group" class="size-5 sm:size-7" />
                         </span>
-                        <span class="min-w-0 flex-1">
-                            <span class="block truncate text-sm font-semibold leading-snug lg:hidden">
-                                @if ($player->number !== null)
-                                    <span class="tabular-nums">#{{ $player->number }}</span>
-                                    <span class="mx-1 text-zinc-400">·</span>
-                                @endif
-                                {{ $player->name }}
-                            </span>
-                            <span class="hidden min-w-0 lg:block">
-                                @if ($player->number !== null)
-                                    <span class="block text-lg font-semibold leading-tight">#{{ $player->number }}</span>
-                                @endif
-                                @foreach ($player->nameLines() as $line)
-                                    <span class="block truncate text-sm leading-tight">{{ $line }}</span>
-                                @endforeach
-                            </span>
-                        </span>
+                        <span class="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base">{{ $opponentName }}</span>
                     </button>
-                @endforeach
-                <button
-                    type="button"
-                    wire:click="recordOpponent"
-                    class="flex w-full items-center gap-3 rounded-lg border border-zinc-300 bg-white px-3 py-3 text-left hover:border-zinc-900 lg:rounded-xl"
-                >
-                    <span class="pointer-events-none flex size-10 shrink-0 items-center justify-center rounded-full border border-zinc-900 lg:size-14">
-                        <flux:icon name="user-group" class="size-5 lg:size-7" />
-                    </span>
-                    <span class="min-w-0 flex-1 truncate text-sm font-semibold lg:text-base">{{ $opponentName }}</span>
-                </button>
+                </div>
             </div>
         </div>
     @endif
 </flux:modal>
 
-<flux:modal wire:model="choosingShotLocation" class="statistics-collect-modal max-w-2xl !border-0 !bg-white !p-0 lg:[width:min(36rem,calc(100vw-2rem))]">
+<flux:modal wire:model="choosingShotLocation" :closable="false" class="statistics-collect-modal !border-0 !bg-white !p-0">
     @if ($pendingStat?->isFieldGoal())
-        <div class="relative px-4 py-4 text-zinc-900 sm:px-6">
-            <button
-                type="button"
-                wire:click="cancelShotLocation"
-                class="absolute end-4 top-4 z-10 text-sm font-medium text-zinc-600 hover:text-zinc-900"
-            >
-                {{ __('Cancel') }}
-            </button>
-            <div class="pe-16 text-center">
-                <h2 class="text-base font-semibold">{{ __('Mark shot location') }}</h2>
-                <p class="mt-1 text-sm text-zinc-600">{{ __($pendingStat->pickerTitle()) }}</p>
-            </div>
+        <div class="flex h-dvh min-h-0 flex-col text-zinc-900">
+            @include('livewire.statistics.partials.collect-modal-header', ['title' => __('Mark shot location'), 'cancelAction' => 'cancelShotLocation'])
+            <p class="px-4 text-center text-sm text-zinc-600">{{ __($pendingStat->pickerTitle()) }}</p>
             @error('shotLocation')
                 <p class="mt-3 text-center text-sm text-red-600">{{ $message }}</p>
             @enderror
-            <div class="mt-4">
-                <x-shot-court />
+            <div class="mt-4 flex flex-1 flex-col justify-center px-4 sm:px-6" wire:key="shot-court-{{ $pendingType }}">
+                <x-shot-court :made="$pendingStat->isSolid()" />
             </div>
         </div>
     @endif
 </flux:modal>
 
-<flux:modal wire:model="editingAction" class="statistics-collect-modal max-w-2xl !bg-white">
-    <div class="flex max-lg:min-h-[calc(100dvh-2rem)] max-lg:flex-col space-y-4 text-zinc-900">
-        <div class="pe-8 text-center">
-            <h2 class="text-base font-semibold">{{ __('Edit') }}</h2>
-        </div>
-        <div class="flex min-h-0 flex-1 flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start">
-            <div class="flex min-h-0 max-lg:max-h-[45dvh] flex-col gap-2 overflow-y-auto lg:space-y-2">
+<flux:modal wire:model="editingAction" :closable="false" class="statistics-collect-modal !bg-white">
+    <div class="flex h-dvh min-h-0 flex-col text-zinc-900">
+        @include('livewire.statistics.partials.collect-modal-header', ['title' => __('Edit'), 'cancelAction' => 'cancelEditingAction'])
+        <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-6">
+            <div class="flex flex-col gap-2 sm:grid sm:grid-cols-2 sm:content-start sm:gap-3 lg:grid-cols-3 xl:grid-cols-4">
                 @foreach ($this->attachedPlayers as $player)
                     <button
                         type="button"
                         wire:key="edit-player-{{ $player->id }}"
                         wire:click="selectEditingPlayer({{ $player->id }})"
                         @class([
-                            'flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left',
-                            'border-zinc-900 ring-2 ring-zinc-900 ring-inset' => ! $editingForOpponent && $editingPlayerId === $player->id,
-                            'border-zinc-300' => $editingForOpponent || $editingPlayerId !== $player->id,
+                            'flex w-full items-center gap-3 rounded-lg border px-3 py-3 text-left sm:rounded-xl sm:py-4',
+                            'border-zinc-900 bg-amber-100' => ! $editingForOpponent && $editingPlayerId === $player->id,
+                            'border-zinc-300 bg-white hover:border-zinc-900' => $editingForOpponent || $editingPlayerId !== $player->id,
                         ])
                     >
-                        <span class="w-8 shrink-0 text-sm font-semibold tabular-nums">{{ $player->number ?? '—' }}</span>
-                        <span class="min-w-0 truncate text-sm">{{ $player->name }}</span>
+                        <span class="pointer-events-none flex size-10 shrink-0 items-center justify-center rounded-full border border-zinc-900 sm:size-14">
+                            <flux:icon name="user" class="size-5 sm:size-7" />
+                        </span>
+                        <span class="min-w-0 flex-1">
+                            <span class="block truncate text-sm font-semibold leading-snug sm:text-base">
+                                @if ($player->number !== null)
+                                    <span class="tabular-nums">#{{ $player->number }}</span>
+                                    <span class="mx-1 text-zinc-400">·</span>
+                                @endif
+                                {{ $player->name }}
+                            </span>
+                        </span>
                     </button>
                 @endforeach
                 <button
                     type="button"
                     wire:click="selectEditingOpponent"
                     @class([
-                        'flex w-full items-center rounded-lg border px-3 py-2 text-left text-sm font-medium',
-                        'border-zinc-900 ring-2 ring-zinc-900 ring-inset' => $editingForOpponent,
-                        'border-zinc-300' => ! $editingForOpponent,
+                        'flex w-full items-center gap-3 rounded-lg border px-3 py-3 text-left sm:rounded-xl sm:py-4',
+                        'border-zinc-900 bg-amber-100' => $editingForOpponent,
+                        'border-zinc-300 bg-white hover:border-zinc-900' => ! $editingForOpponent,
                     ])
-                >{{ $opponentName }}</button>
+                >
+                    <span class="pointer-events-none flex size-10 shrink-0 items-center justify-center rounded-full border border-zinc-900 sm:size-14">
+                        <flux:icon name="user-group" class="size-5 sm:size-7" />
+                    </span>
+                    <span class="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base">{{ $opponentName }}</span>
+                </button>
             </div>
-            <div class="grid grid-cols-2 gap-2 lg:block lg:space-y-2">
+            <div class="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
                 @foreach ([
                     [\App\Enums\StatType::TwoPointMade, 'made'],
                     [\App\Enums\StatType::TwoPointMissed, 'missed'],
@@ -603,31 +590,28 @@
                 @endforeach
             </div>
         </div>
-        <div class="flex justify-end">
+        <div class="flex shrink-0 justify-end border-t border-zinc-200 px-3 py-3 sm:px-6">
             <button type="button" wire:click="saveLogLine" class="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white">{{ __('Confirm') }}</button>
         </div>
     </div>
 </flux:modal>
 
-<flux:modal wire:model="confirmingQuarterEnd" class="statistics-collect-modal max-w-md !bg-white">
-    <div class="space-y-6 text-zinc-900">
-        <div class="pe-8 text-center">
-            <h2 class="text-base font-semibold">{{ $quarterTitle }}</h2>
-            <p class="mt-3 text-sm text-zinc-600">{{ $endPeriodQuestion }}</p>
-            <p class="mt-1 text-sm font-medium text-red-700">{{ __('You cannot undo this action.') }}</p>
+<flux:modal wire:model="confirmingQuarterEnd" :closable="false" class="statistics-collect-modal max-w-md !bg-white">
+    <div class="flex h-dvh min-h-0 flex-col text-zinc-900">
+        @include('livewire.statistics.partials.collect-modal-header', ['title' => $quarterTitle, 'cancelAction' => 'cancelConfirmingQuarterEnd'])
+        <div class="flex-1 space-y-3 px-4 text-center">
+            <p class="text-sm text-zinc-600">{{ $endPeriodQuestion }}</p>
+            <p class="text-sm font-medium text-red-700">{{ __('You cannot undo this action.') }}</p>
         </div>
-        <div class="flex justify-end gap-2">
-            <flux:modal.close>
-                <button type="button" class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800">{{ __('Cancel') }}</button>
-            </flux:modal.close>
+        <div class="flex shrink-0 justify-end border-t border-zinc-200 px-3 py-3 sm:px-6">
             <button type="button" wire:click="endQuarter" class="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white">{{ __('Confirm') }}</button>
         </div>
     </div>
 </flux:modal>
 
-<flux:modal wire:model="confirmingGameFinish" class="statistics-collect-modal max-w-md !bg-white">
+<flux:modal wire:model="confirmingGameFinish" :closable="false" class="statistics-collect-modal max-w-md !bg-white">
     <div class="space-y-6 text-zinc-900">
-        <div class="pe-8 text-center">
+        <div class="text-center">
             <h2 class="text-base font-semibold">{{ __('Finish game?') }}</h2>
             <p class="mt-3 text-sm text-zinc-600">{{ __('Mark this game as played and save the final score from the collected stats?') }}</p>
         </div>

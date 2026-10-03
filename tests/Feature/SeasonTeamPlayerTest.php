@@ -334,6 +334,31 @@ test('a season is listed and edited by its uuid', function () {
         ->assertNotFound();
 });
 
+test('teams index filters by season', function () {
+    $administrator = User::factory()->administrator()->create();
+    $pastSeason = Season::factory()->create(['is_current' => false, 'name' => '2023/2024']);
+    $currentSeason = Season::factory()->current()->create(['name' => '2024/2025']);
+    Team::factory()->create(['season_id' => $pastSeason->id, 'name' => 'Past Team']);
+    Team::factory()->create(['season_id' => $currentSeason->id, 'name' => 'Current Team']);
+
+    Livewire::actingAs($administrator)
+        ->test(TeamIndex::class)
+        ->assertSee('Current Team')
+        ->assertDontSee('Past Team');
+
+    Livewire::actingAs($administrator)
+        ->test(TeamIndex::class)
+        ->set('seasonId', (string) $pastSeason->id)
+        ->assertSee('Past Team')
+        ->assertDontSee('Current Team');
+
+    Livewire::actingAs($administrator)
+        ->test(TeamIndex::class)
+        ->set('seasonId', '')
+        ->assertSee('Current Team')
+        ->assertSee('Past Team');
+});
+
 test('a team is listed and edited by its uuid', function () {
     $administrator = User::factory()->administrator()->create();
     $team = Team::factory()->create();

@@ -4,7 +4,16 @@
     :action-href="route('teams.create')"
     :action-label="__('New team')"
 >
-    <table class="w-full text-sm">
+    <div class="border-b border-zinc-200 px-4 py-4">
+        <flux:select wire:model.live="seasonId" :label="__('Season')" class="sm:max-w-xs">
+            <flux:select.option value="">{{ __('All seasons') }}</flux:select.option>
+            @foreach ($this->seasons as $season)
+                <flux:select.option :value="$season->id">{{ $season->name }}</flux:select.option>
+            @endforeach
+        </flux:select>
+    </div>
+
+    <x-listing.table>
         <thead>
             <tr class="border-b border-zinc-200 text-left text-xs font-medium tracking-wide text-zinc-500 uppercase">
                 <th class="px-4 py-3 font-medium">{{ __('Name') }}</th>
@@ -19,29 +28,29 @@
         <tbody>
             @forelse ($this->teams as $team)
                 <tr wire:key="team-{{ $team->uuid }}" class="border-b border-zinc-100 last:border-b-0">
-                    <td class="px-4 py-4 font-semibold">{{ $team->name }}</td>
+                    <x-listing.cell primary>{{ $team->name }}</x-listing.cell>
                     @can(\App\Enums\PermissionName::CreateClubs->value)
-                        <td class="px-4 py-4 text-zinc-600">{{ $team->club->name }}</td>
+                        <x-listing.cell :label="__('Club')">{{ $team->club->name }}</x-listing.cell>
                     @endcan
-                    <td class="px-4 py-4 text-zinc-600">{{ $team->season->name }}</td>
-                    <td class="px-4 py-4">
+                    <x-listing.cell :label="__('Season')">{{ $team->season->name }}</x-listing.cell>
+                    <x-listing.cell :label="__('Enabled')">
                         <x-listing.status :enabled="$team->enabled" />
-                    </td>
-                    <td class="px-4 py-4">
+                    </x-listing.cell>
+                    <x-listing.cell actions>
                         <x-listing.actions :edit-href="route('teams.edit', $team)">
                             <x-slot:delete>
                                 <x-listing.delete-button :record-id="$team->uuid" />
                             </x-slot:delete>
                         </x-listing.actions>
-                    </td>
+                    </x-listing.cell>
                 </tr>
             @empty
-                <tr>
+                <tr class="listing-empty">
                     <td colspan="{{ auth()->user()->can(\App\Enums\PermissionName::CreateClubs->value) ? 5 : 4 }}" class="px-4 py-8 text-center text-zinc-500">{{ __('No teams yet.') }}</td>
                 </tr>
             @endforelse
         </tbody>
-    </table>
+    </x-listing.table>
 
     <x-slot:modal>
         <x-listing.delete-modal

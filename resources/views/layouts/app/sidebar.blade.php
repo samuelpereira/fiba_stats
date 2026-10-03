@@ -49,14 +49,12 @@
                             {{ __('Games') }}
                         </flux:sidebar.item>
                     @endcan
-                </flux:sidebar.group>
-                @can('collectAny', \App\Models\Game::class)
-                    <flux:sidebar.group :heading="__('Competition')" class="grid">
+                    @can('collectAny', \App\Models\Game::class)
                         <flux:sidebar.item icon="clipboard-document-list" :href="route('statistics.index')" :current="request()->routeIs('statistics.*')" wire:navigate>
                             {{ __('Statistics') }}
                         </flux:sidebar.item>
-                    </flux:sidebar.group>
-                @endcan
+                    @endcan
+                </flux:sidebar.group>
             </flux:sidebar.nav>
 
             <flux:spacer />

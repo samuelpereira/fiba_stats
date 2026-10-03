@@ -1,8 +1,10 @@
 <?php
 
+use App\Enums\RoleName;
 use App\Livewire\Statistics\Record;
 use App\Models\Game;
 use App\Models\Player;
+use App\Models\Team;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Features\SupportTesting\Testable;
@@ -79,8 +81,21 @@ function startCollectingPeriod(Testable $test): Testable
     return $test->call('recordQuarterStart');
 }
 
+function grantStatisticsTeamAccess(User $user, Game|Team $target): void
+{
+    if (! $user->hasRole(RoleName::User)) {
+        return;
+    }
+
+    $teamId = $target instanceof Game ? $target->team_id : $target->id;
+
+    $user->teams()->syncWithoutDetaching([$teamId]);
+}
+
 function statisticsRecord(User $user, Game $game, bool $openPeriod = true): Testable
 {
+    grantStatisticsTeamAccess($user, $game);
+
     $test = Livewire::actingAs($user)->test(Record::class, ['game' => $game]);
 
     if (! $openPeriod || $test->get('periodIsOpen')) {

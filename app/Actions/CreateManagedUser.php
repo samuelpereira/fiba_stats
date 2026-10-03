@@ -13,7 +13,10 @@ class CreateManagedUser
     /**
      * Create a user-role account. A club role can only create users in its own club.
      */
-    public function handle(User $actor, string $name, string $email, string $password, ?int $clubId = null): User
+    /**
+     * @param  list<int|string>  $teamIds
+     */
+    public function handle(User $actor, string $name, string $email, string $password, ?int $clubId = null, array $teamIds = []): User
     {
         if (! $actor->can(PermissionName::CreateUsers->value)) {
             throw new AuthorizationException;
@@ -34,8 +37,11 @@ class CreateManagedUser
             'email' => $email,
             'password' => $password,
         ]);
+        $user->save();
         $user->markEmailAsVerified();
         $user->assignRole(RoleName::User);
+
+        (new SyncUserAssignedTeams)->handle($user, $club->id, $teamIds);
 
         return $user;
     }

@@ -9,6 +9,7 @@ use App\Livewire\Games\Index as GameIndex;
 use App\Livewire\Teams\Index as TeamIndex;
 use App\Models\Club;
 use App\Models\Game;
+use App\Models\Season;
 use App\Models\Team;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -145,6 +146,38 @@ test('a repeated fpb id is rejected', function () {
         ->set('fpbId', 'FPB-9')
         ->call('save')
         ->assertHasErrors('fpbId');
+});
+
+test('games index filters by season and team', function () {
+    $administrator = User::factory()->administrator()->create();
+    $pastSeason = Season::factory()->create(['is_current' => false, 'name' => '2023/2024']);
+    $currentSeason = Season::factory()->current()->create(['name' => '2024/2025']);
+    $pastTeam = Team::factory()->create(['season_id' => $pastSeason->id]);
+    $currentTeamA = Team::factory()->create(['season_id' => $currentSeason->id]);
+    $currentTeamB = Team::factory()->create(['season_id' => $currentSeason->id]);
+    Game::factory()->create(['team_id' => $pastTeam->id, 'opponent' => 'Past Opponent']);
+    Game::factory()->create(['team_id' => $currentTeamA->id, 'opponent' => 'Team A Opponent']);
+    Game::factory()->create(['team_id' => $currentTeamB->id, 'opponent' => 'Team B Opponent']);
+
+    Livewire::actingAs($administrator)
+        ->test(GameIndex::class)
+        ->assertSee('Team A Opponent')
+        ->assertSee('Team B Opponent')
+        ->assertDontSee('Past Opponent');
+
+    Livewire::actingAs($administrator)
+        ->test(GameIndex::class)
+        ->set('seasonId', (string) $pastSeason->id)
+        ->assertSee('Past Opponent')
+        ->assertDontSee('Team A Opponent');
+
+    Livewire::actingAs($administrator)
+        ->test(GameIndex::class)
+        ->set('seasonId', (string) $currentSeason->id)
+        ->set('teamId', (string) $currentTeamA->id)
+        ->assertSee('Team A Opponent')
+        ->assertDontSee('Team B Opponent')
+        ->assertDontSee('Past Opponent');
 });
 
 test('a club only sees games of its own teams', function () {

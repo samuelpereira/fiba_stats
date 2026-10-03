@@ -1,6 +1,6 @@
 <div class="flex h-dvh min-h-0 flex-col bg-zinc-100 text-zinc-900">
     <header class="grid shrink-0 grid-cols-3 items-center border-b border-zinc-200 bg-white px-4 py-3">
-        <a href="{{ route('statistics.record', $game) }}" wire:navigate class="inline-flex items-center gap-2 text-sm font-medium text-zinc-900">
+        <a href="{{ $backUrl }}" wire:navigate class="inline-flex items-center gap-2 text-sm font-medium text-zinc-900">
             <flux:icon name="arrow-left" class="size-4" />
             {{ __('Back') }}
         </a>
@@ -9,7 +9,7 @@
     </header>
 
     <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6">
-        <div class="mx-auto w-1/2 rounded-lg border border-zinc-200 bg-white shadow-sm">
+        <div class="mx-auto w-full rounded-lg border border-zinc-200 bg-white shadow-sm sm:w-1/2">
             <div class="border-b border-zinc-200 px-4 py-3 sm:px-6">
                 <h2 class="text-base font-semibold">{{ __('Breakdown') }}</h2>
                 <p class="text-sm text-zinc-500">{{ __('Stat breakdown by time period') }}</p>
@@ -30,14 +30,18 @@
                     <tr class="border-b border-zinc-100">
                         <td class="py-3 pr-3 pl-4 sm:pl-6">
                             <div class="flex min-w-0 items-center gap-3">
-                                <span class="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-300 bg-zinc-100 text-[10px] font-semibold tracking-wide text-zinc-700">
+                                <span
+                                    class="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-300 bg-zinc-100 text-[10px] font-semibold tracking-wide text-zinc-700"
+                                    title="{{ $homeName }}"
+                                >
+                                    <span class="sm:hidden">{{ $homeInitials }}</span>
                                     @if ($homeLogoUrl)
-                                        <img src="{{ $homeLogoUrl }}" alt="" class="size-full object-cover" />
+                                        <img src="{{ $homeLogoUrl }}" alt="" class="hidden size-full object-cover sm:block" />
                                     @else
-                                        {{ $homeInitials }}
+                                        <span class="hidden sm:inline">{{ $homeInitials }}</span>
                                     @endif
                                 </span>
-                                <span class="truncate font-medium">{{ $homeName }}</span>
+                                <span class="hidden truncate font-medium sm:inline">{{ $homeName }}</span>
                             </div>
                         </td>
                         @foreach ($periods as $period)
@@ -49,14 +53,18 @@
                     <tr>
                         <td class="py-3 pr-3 pl-4 sm:pl-6">
                             <div class="flex min-w-0 items-center gap-3">
-                                <span class="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-300 bg-zinc-100 text-[10px] font-semibold tracking-wide text-zinc-700">
+                                <span
+                                    class="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-300 bg-zinc-100 text-[10px] font-semibold tracking-wide text-zinc-700"
+                                    title="{{ $awayName }}"
+                                >
+                                    <span class="sm:hidden">{{ $awayInitials }}</span>
                                     @if ($awayLogoUrl)
-                                        <img src="{{ $awayLogoUrl }}" alt="" class="size-full object-cover" />
+                                        <img src="{{ $awayLogoUrl }}" alt="" class="hidden size-full object-cover sm:block" />
                                     @else
-                                        {{ $awayInitials }}
+                                        <span class="hidden sm:inline">{{ $awayInitials }}</span>
                                     @endif
                                 </span>
-                                <span class="truncate font-medium">{{ $awayName }}</span>
+                                <span class="hidden truncate font-medium sm:inline">{{ $awayName }}</span>
                             </div>
                         </td>
                         @foreach ($periods as $period)
@@ -186,7 +194,23 @@
                         </span>
                     </div>
                 </div>
-                <div class="mb-4 grid gap-4 sm:grid-cols-2">
+                <div class="mb-4 sm:hidden">
+                    <flux:select wire:model.live="mobileShotChartFilter">
+                        <flux:select.option value="home|team">{{ $homeName }}</flux:select.option>
+                        @foreach ($homeShotChartPlayers as $player)
+                            <flux:select.option value="home|player-{{ $player['id'] }}">
+                                #{{ $player['number'] ?? '—' }} {{ $player['name'] }} · {{ $homeName }}
+                            </flux:select.option>
+                        @endforeach
+                        <flux:select.option value="away|team">{{ $awayName }}</flux:select.option>
+                        @foreach ($awayShotChartPlayers as $player)
+                            <flux:select.option value="away|player-{{ $player['id'] }}">
+                                #{{ $player['number'] ?? '—' }} {{ $player['name'] }} · {{ $awayName }}
+                            </flux:select.option>
+                        @endforeach
+                    </flux:select>
+                </div>
+                <div class="mb-4 hidden gap-4 sm:grid sm:grid-cols-2">
                     <flux:select wire:model.live="homeShotFilter">
                         <flux:select.option value="team">{{ $homeName }}</flux:select.option>
                         @foreach ($homeShotChartPlayers as $player)
@@ -206,9 +230,16 @@
                 </div>
                 <div class="space-y-6">
                     @foreach ($shotChartsByPeriod as $periodChart)
-                        <div wire:key="shot-chart-period-{{ $periodChart['quarter'] }}-{{ $homeShotFilter }}-{{ $awayShotFilter }}">
+                        <div wire:key="shot-chart-period-{{ $periodChart['quarter'] }}-{{ $homeShotFilter }}-{{ $awayShotFilter }}-{{ $mobileShotChartFilter }}">
                             <h3 class="mb-3 text-center text-sm font-semibold tracking-wide text-zinc-700 uppercase">{{ __($periodChart['label']) }}</h3>
-                            <div class="grid gap-4 sm:grid-cols-2">
+                            <div class="sm:hidden">
+                                <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+                                    <div class="mx-auto w-full max-w-md">
+                                        <x-shot-chart :shots="$mobileShotChartSide === 'home' ? $periodChart['home'] : $periodChart['away']" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="hidden gap-4 sm:grid sm:grid-cols-2">
                                 <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
                                     <div class="mx-auto w-[62.5%]">
                                         <x-shot-chart :shots="$periodChart['home']" />
@@ -230,7 +261,14 @@
             <div class="border-b border-zinc-200 px-4 py-3 sm:px-6">
                 <h2 class="text-base font-semibold">{{ __('Box score') }}</h2>
             </div>
-            <div class="overflow-x-auto">
+            @include('livewire.statistics.partials.box-score-mobile', [
+                'players' => $boxScore['players'],
+                'teamLine' => $boxScore['team'],
+                'teamName' => $teamName,
+                'opponentLine' => $boxScore['opponent'],
+                'opponentName' => $opponentName,
+            ])
+            <div class="hidden overflow-x-auto sm:block">
             <table class="w-full text-left text-sm">
                 <thead>
                     <tr class="border-b border-zinc-200 text-xs font-medium tracking-wide text-zinc-500 uppercase">

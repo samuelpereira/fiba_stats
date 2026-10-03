@@ -2,11 +2,9 @@
 
 namespace App\Livewire\Statistics;
 
-use App\Enums\RoleName;
 use App\Livewire\Concerns\InteractsWithAuthenticatedUser;
 use App\Models\Game;
 use Illuminate\Contracts\View\View;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
@@ -32,9 +30,7 @@ class Index extends Component
             ->with(['team.season'])
             ->orderByDesc('date_time');
 
-        if (! $this->actor()->hasRole(RoleName::Administrator)) {
-            $games->whereHas('team', fn (Builder $query) => $query->where('club_id', $this->actor()->club_id));
-        }
+        $games->forStatisticsCollector($this->actor());
 
         return $games->get();
     }

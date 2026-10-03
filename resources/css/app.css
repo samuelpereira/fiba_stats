@@ -65,19 +65,56 @@ select:focus[data-flux-control] {
 }
 
 @layer components {
-    @media (max-width: 1023px) {
-        dialog.statistics-collect-modal {
-            position: fixed !important;
-            inset: 0 !important;
-            width: 100% !important;
-            max-width: none !important;
-            height: 100dvh !important;
-            max-height: 100dvh !important;
-            margin: 0 !important;
-            border-radius: 0 !important;
-            transform: none !important;
-            overflow-y: auto;
+    @media (max-width: 639px) {
+        .listing-table thead {
+            @apply sr-only;
         }
+
+        .listing-table tbody tr:not(.listing-empty) {
+            @apply flex flex-col border-b border-zinc-100 px-4 py-3 last:border-b-0;
+        }
+
+        .listing-table tbody tr.listing-empty td {
+            @apply block px-4 py-8 text-center;
+        }
+
+        .listing-table tbody tr:not(.listing-empty) td {
+            @apply flex items-center justify-between gap-3 border-0 px-0 py-1.5 text-left;
+        }
+
+        .listing-table td[data-label='primary'] {
+            @apply order-first block py-0 pb-2 text-base;
+        }
+
+        .listing-table td[data-label='primary']::before {
+            content: none;
+        }
+
+        .listing-table td[data-label='actions'] {
+            @apply block pt-2;
+        }
+
+        .listing-table td[data-label='actions']::before {
+            content: none;
+        }
+
+        .listing-table td[data-label]:not([data-label='primary']):not([data-label='actions'])::before {
+            content: attr(data-label);
+            @apply shrink-0 pe-3 text-xs font-medium tracking-wide text-zinc-500 uppercase;
+        }
+    }
+
+    dialog.statistics-collect-modal {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100% !important;
+        max-width: none !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        transform: none !important;
+        overflow-y: auto;
     }
 }
 

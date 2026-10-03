@@ -33,7 +33,7 @@ class Index extends Component
     {
         $actor = $this->actor();
 
-        $query = User::query()->role(RoleName::User)->with('club')->orderBy('name');
+        $query = User::query()->role(RoleName::User)->with(['club', 'teams.season'])->orderBy('name');
 
         if (! $actor->can(PermissionName::CreateClubs->value)) {
             $query->where('club_id', $actor->club_id);

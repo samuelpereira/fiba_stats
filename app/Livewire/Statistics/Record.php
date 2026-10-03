@@ -587,6 +587,25 @@ class Record extends Component
         unset($this->lines, $this->timeouts, $this->lineup);
     }
 
+    public function cancelChoosingTimeout(): void
+    {
+        $this->choosingTimeout = false;
+    }
+
+    public function cancelEditingAction(): void
+    {
+        $this->editingAction = false;
+        $this->editingEventId = null;
+        $this->editingType = null;
+        $this->editingPlayerId = null;
+        $this->editingForOpponent = false;
+    }
+
+    public function cancelConfirmingQuarterEnd(): void
+    {
+        $this->confirmingQuarterEnd = false;
+    }
+
     public function attemptExit(): void
     {
         $this->authorize('collect', $this->game);

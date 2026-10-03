@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\GameStatus;
 use App\Enums\HomeAway;
 use App\Enums\StatType;
 use App\Enums\TeamColor;
@@ -635,8 +636,8 @@ test('a club member cannot record a player from another team', function () {
 
 test('a club member only sees games of their club', function () {
     $club = Club::factory()->create();
-    $member = User::factory()->memberOf($club)->create();
     $team = Team::factory()->create(['club_id' => $club->id]);
+    $member = User::factory()->memberOf($club)->withTeams($team)->create();
     Game::factory()->create([
         'team_id' => $team->id,
         'opponent' => 'Sporting',
@@ -651,10 +652,34 @@ test('a club member only sees games of their club', function () {
         ->assertDontSee('Oponente Externo');
 });
 
+test('the statistics index links played games to the box score and others to collection', function () {
+    $club = Club::factory()->create();
+    $team = Team::factory()->create(['club_id' => $club->id]);
+    $member = User::factory()->memberOf($club)->withTeams($team)->create();
+    $played = Game::factory()->create([
+        'team_id' => $team->id,
+        'opponent' => 'Played Opponent',
+        'status' => GameStatus::Played,
+    ]);
+    $scheduled = Game::factory()->create([
+        'team_id' => $team->id,
+        'opponent' => 'Scheduled Opponent',
+        'status' => GameStatus::Scheduled,
+    ]);
+
+    Livewire::actingAs($member)
+        ->test(StatisticsIndex::class)
+        ->assertSee(route('statistics.show', $played), false)
+        ->assertSee(route('statistics.record', $scheduled), false)
+        ->assertSeeHtml('wire:key="game-'.$played->uuid.'"')
+        ->assertSee('Played Opponent')
+        ->assertSee('Scheduled Opponent');
+});
+
 test('a club member opens a game log by its uuid', function () {
     $club = Club::factory()->create();
-    $member = User::factory()->memberOf($club)->create();
     $team = Team::factory()->create(['club_id' => $club->id]);
+    $member = User::factory()->memberOf($club)->withTeams($team)->create();
     $game = Game::factory()->create([
         'team_id' => $team->id,
         'opponent' => 'Sporting',

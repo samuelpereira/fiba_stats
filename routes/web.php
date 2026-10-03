@@ -6,6 +6,7 @@ use App\Livewire\Administrators\Index as AdministratorIndex;
 use App\Livewire\Clubs\Create as CreateClub;
 use App\Livewire\Clubs\Edit as EditClub;
 use App\Livewire\Clubs\Index as ClubIndex;
+use App\Livewire\Dashboard;
 use App\Livewire\Games\Create as CreateGame;
 use App\Livewire\Games\Edit as EditGame;
 use App\Livewire\Games\Index as GameIndex;
@@ -35,7 +36,7 @@ use Illuminate\Support\Facades\Route;
 Route::view('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::view('dashboard', 'dashboard')->name('dashboard');
+    Route::livewire('dashboard', Dashboard::class)->name('dashboard');
 
     Route::livewire('administrators', AdministratorIndex::class)->name('administrators.index')->can('viewAnyStaff', User::class);
     Route::livewire('administrators/create', CreateAdministrator::class)->name('administrators.create')->can('createStaff', User::class);

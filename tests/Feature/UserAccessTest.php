@@ -7,10 +7,13 @@ use App\Livewire\Administrators\Edit as EditAdministrator;
 use App\Livewire\Administrators\Index as AdministratorIndex;
 use App\Livewire\Clubs\Create as CreateClub;
 use App\Livewire\Clubs\Edit as EditClub;
+use App\Livewire\Statistics\Index;
 use App\Livewire\Users\Create as CreateUser;
 use App\Livewire\Users\Edit as EditUser;
 use App\Livewire\Users\Index as UserIndex;
 use App\Models\Club;
+use App\Models\Game;
+use App\Models\Team;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Livewire\Livewire;
@@ -97,6 +100,7 @@ test('a club role creates a user in its own club', function () {
     $club = Club::factory()->create();
     $otherClub = Club::factory()->create();
     $access = User::factory()->clubAccessFor($club)->create();
+    $team = Team::factory()->create(['club_id' => $club->id]);
 
     Livewire::actingAs($access)
         ->test(CreateUser::class)
@@ -105,6 +109,7 @@ test('a club role creates a user in its own club', function () {
         ->set('password', 'password')
         ->set('password_confirmation', 'password')
         ->set('clubId', (string) $otherClub->id)
+        ->set('teamIds', [(string) $team->id])
         ->call('save')
         ->assertHasNoErrors()
         ->assertRedirect(route('users.index'));
@@ -136,12 +141,14 @@ test('a club role only sees users from its club', function () {
 test('an administrator creates a user in the selected club', function () {
     $administrator = User::factory()->administrator()->create();
     $club = Club::factory()->create();
+    $team = Team::factory()->create(['club_id' => $club->id]);
 
     Livewire::actingAs($administrator)
         ->test(CreateUser::class)
         ->set('name', 'Player')
         ->set('email', 'player@example.com')
         ->set('clubId', (string) $club->id)
+        ->set('teamIds', [(string) $team->id])
         ->set('password', 'password')
         ->set('password_confirmation', 'password')
         ->call('save')
@@ -150,7 +157,41 @@ test('an administrator creates a user in the selected club', function () {
     $player = User::query()->where('email', 'player@example.com')->first();
 
     expect($player?->hasRole(RoleName::User))->toBeTrue()
-        ->and($player?->club_id)->toBe($club->id);
+        ->and($player?->club_id)->toBe($club->id)
+        ->and($player?->teams()->pluck('teams.id')->all())->toBe([$team->id]);
+});
+
+test('an administrator can remove all team assignments when editing a user', function () {
+    $administrator = User::factory()->administrator()->create();
+    $club = Club::factory()->create();
+    $team = Team::factory()->create(['club_id' => $club->id]);
+    $member = User::factory()->memberOf($club)->withTeams($team)->create();
+
+    Livewire::actingAs($administrator)
+        ->test(EditUser::class, ['user' => $member])
+        ->set('teamIds', [])
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertRedirect(route('users.index'));
+
+    expect($member->refresh()->teams)->toBeEmpty();
+});
+
+test('a user role only collects statistics for assigned teams', function () {
+    $club = Club::factory()->create();
+    $assignedTeam = Team::factory()->create(['club_id' => $club->id, 'name' => 'Assigned']);
+    $otherTeam = Team::factory()->create(['club_id' => $club->id, 'name' => 'Other']);
+    $member = User::factory()->memberOf($club)->withTeams($assignedTeam)->create();
+    $allowedGame = Game::factory()->create(['team_id' => $assignedTeam->id]);
+    $blockedGame = Game::factory()->create(['team_id' => $otherTeam->id]);
+
+    $this->actingAs($member)->get(route('statistics.record', $allowedGame))->assertOk();
+    $this->actingAs($member)->get(route('statistics.record', $blockedGame))->assertForbidden();
+
+    Livewire::actingAs($member)
+        ->test(Index::class)
+        ->assertSee($allowedGame->opponent)
+        ->assertDontSee($blockedGame->opponent);
 });
 
 test('an administrator creates a manager from the administrators menu', function () {
@@ -251,7 +292,9 @@ test('an administrator can change a manager into an administrator', function () 
 
 test('an administrator can disable a user so they cannot sign in', function () {
     $administrator = User::factory()->administrator()->create();
-    $member = User::factory()->memberOf(Club::factory()->create())->create();
+    $club = Club::factory()->create();
+    $team = Team::factory()->create(['club_id' => $club->id]);
+    $member = User::factory()->memberOf($club)->withTeams($team)->create();
 
     Livewire::actingAs($administrator)
         ->test(EditUser::class, ['user' => $member])

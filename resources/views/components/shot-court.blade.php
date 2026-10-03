@@ -1,7 +1,36 @@
+@props([
+    'made' => true,
+])
+
+@php
+    $courtWidth = \App\Support\ShotCourt::Width;
+    $courtHeight = \App\Support\ShotCourt::Height;
+@endphp
+
 <div
     data-shot-court
+    wire:ignore
     x-data="{
-        mark(event) {
+        marker: null,
+        submitting: false,
+        made: @js($made),
+        courtWidth: @js($courtWidth),
+        courtHeight: @js($courtHeight),
+        markerPositionStyle() {
+            if (! this.marker) {
+                return '';
+            }
+
+            const left = (this.marker.x / this.courtWidth) * 100;
+            const top = (this.marker.y / this.courtHeight) * 100;
+
+            return `left: ${left}%; top: ${top}%;`;
+        },
+        async mark(event) {
+            if (this.submitting) {
+                return;
+            }
+
             const svg = this.$refs.court;
 
             if (! svg) {
@@ -11,23 +40,75 @@
             const point = svg.createSVGPoint();
             point.x = event.clientX;
             point.y = event.clientY;
-            const location = point.matrixTransform(svg.getScreenCTM().inverse());
+            const matrix = svg.getScreenCTM();
 
-            $wire.recordShotLocation(Math.round(location.x), Math.round(location.y));
+            if (! matrix) {
+                return;
+            }
+
+            const location = point.matrixTransform(matrix.inverse());
+            const x = Math.round(location.x);
+            const y = Math.round(location.y);
+
+            this.marker = { x, y };
+
+            await new Promise((resolve) => window.setTimeout(resolve, 1000));
+
+            this.submitting = true;
+
+            try {
+                await $wire.recordShotLocation(x, y);
+            } finally {
+                this.submitting = false;
+
+                if ($wire.choosingShotLocation) {
+                    this.marker = null;
+                }
+            }
         },
     }"
     class="relative w-full"
 >
     <svg
         x-ref="court"
-        viewBox="0 0 {{ \App\Support\ShotCourt::Width }} {{ \App\Support\ShotCourt::Height }}"
+        viewBox="0 0 {{ $courtWidth }} {{ $courtHeight }}"
         xmlns="http://www.w3.org/2000/svg"
         class="mx-auto block w-full max-w-xl cursor-crosshair touch-none select-none"
+        :class="{ 'cursor-wait': submitting }"
         role="img"
         aria-label="{{ __('Half court') }}"
-        @click="mark($event)"
+        @click.prevent="mark($event)"
     >
-        <rect width="{{ \App\Support\ShotCourt::Width }}" height="{{ \App\Support\ShotCourt::Height }}" fill="#ffffff" />
+        <rect width="{{ $courtWidth }}" height="{{ $courtHeight }}" fill="#ffffff" />
         <x-half-court-markings stroke="#4a4867" three-point-stroke="#4a4867" />
     </svg>
+
+    <div
+        class="pointer-events-none absolute inset-0 mx-auto w-full max-w-xl"
+        aria-hidden="true"
+    >
+        <span
+            x-show="marker && made"
+            x-cloak
+            x-transition:enter="transition ease-out duration-75"
+            x-transition:enter-start="scale-50 opacity-0"
+            x-transition:enter-end="scale-100 opacity-100"
+            class="absolute z-10 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-green-600 ring-1 ring-white"
+            x-bind:style="markerPositionStyle()"
+        ></span>
+        <span
+            x-show="marker && ! made"
+            x-cloak
+            x-transition:enter="transition ease-out duration-75"
+            x-transition:enter-start="scale-50 opacity-0"
+            x-transition:enter-end="scale-100 opacity-100"
+            class="absolute z-10 size-2.5 -translate-x-1/2 -translate-y-1/2 text-red-600"
+            x-bind:style="markerPositionStyle()"
+        >
+            <svg viewBox="0 0 24 24" class="size-2.5 drop-shadow-sm" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                <line x1="6" y1="6" x2="18" y2="18" />
+                <line x1="18" y1="6" x2="6" y2="18" />
+            </svg>
+        </span>
+    </div>
 </div>

@@ -7,6 +7,7 @@ use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
 use App\Enums\PermissionName;
 use App\Livewire\Concerns\InteractsWithAuthenticatedUser;
+use App\Livewire\Concerns\ManagesUserTeamAssignments;
 use App\Models\Club;
 use App\Models\User;
 use Flux\Flux;
@@ -19,7 +20,7 @@ use Livewire\Component;
 #[Title('New user')]
 class Create extends Component
 {
-    use InteractsWithAuthenticatedUser, PasswordValidationRules, ProfileValidationRules;
+    use InteractsWithAuthenticatedUser, ManagesUserTeamAssignments, PasswordValidationRules, ProfileValidationRules;
 
     public string $name = '';
 
@@ -52,6 +53,8 @@ class Create extends Component
             $rules['clubId'] = ['required', 'integer', Rule::exists(Club::class, 'id')];
         }
 
+        $rules = array_merge($rules, $this->teamAssignmentRules());
+
         $validated = $this->validate($rules);
 
         $createManagedUser->handle(
@@ -60,6 +63,7 @@ class Create extends Component
             $validated['email'],
             $validated['password'],
             $actor->can(PermissionName::CreateClubs->value) ? (int) $validated['clubId'] : null,
+            $validated['teamIds'],
         );
 
         Flux::toast(variant: 'success', text: __('User created.'));

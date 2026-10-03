@@ -21,11 +21,26 @@ class Show extends Component
 
     public string $awayShotFilter = 'team';
 
+    public string $mobileShotChartFilter = 'home|team';
+
+    public string $backUrl;
+
     public function mount(Game $game): void
     {
         $this->authorize('collect', $game);
 
         $this->game = $game->loadMissing('team');
+        $this->backUrl = $this->resolveBackUrl(request()->query('from'));
+    }
+
+    public function resolveBackUrl(?string $from): string
+    {
+        return match ($from) {
+            'dashboard' => route('dashboard'),
+            'statistics' => route('statistics.index'),
+            'record' => route('statistics.record', $this->game),
+            default => route('statistics.index'),
+        };
     }
 
     public function render(): View
@@ -78,7 +93,38 @@ class Show extends Component
             'awayLogoUrl' => $weAreHome ? null : $this->game->team->photo_url,
             'homeInitials' => $this->initials($weAreHome ? $this->game->team->name : $this->game->opponent),
             'awayInitials' => $this->initials($weAreHome ? $this->game->opponent : $this->game->team->name),
+            'mobileShotChartSide' => $this->mobileShotChartSide(),
         ]);
+    }
+
+    public function updatedMobileShotChartFilter(): void
+    {
+        if (! str_contains($this->mobileShotChartFilter, '|')) {
+            return;
+        }
+
+        [$side, $filter] = explode('|', $this->mobileShotChartFilter, 2);
+
+        if ($side === 'home') {
+            $this->homeShotFilter = $filter;
+
+            return;
+        }
+
+        if ($side === 'away') {
+            $this->awayShotFilter = $filter;
+        }
+    }
+
+    public function mobileShotChartSide(): string
+    {
+        if (! str_contains($this->mobileShotChartFilter, '|')) {
+            return 'home';
+        }
+
+        [$side] = explode('|', $this->mobileShotChartFilter, 2);
+
+        return $side === 'away' ? 'away' : 'home';
     }
 
     /**

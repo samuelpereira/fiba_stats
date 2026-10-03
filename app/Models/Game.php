@@ -4,12 +4,14 @@ namespace App\Models;
 
 use App\Enums\GameStatus;
 use App\Enums\HomeAway;
+use App\Enums\RoleName;
 use App\Enums\StatType;
 use App\Enums\TeamColor;
 use App\Models\Concerns\HasPublicUuid;
 use Carbon\CarbonImmutable;
 use Database\Factories\GameFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -87,6 +89,25 @@ class Game extends Model
     public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class);
+    }
+
+    /**
+     * @param  Builder<Game>  $query
+     * @return Builder<Game>
+     */
+    public function scopeForStatisticsCollector(Builder $query, User $user): Builder
+    {
+        if ($user->hasRole(RoleName::Administrator)) {
+            return $query;
+        }
+
+        return $query->whereHas('team', function (Builder $teamQuery) use ($user): void {
+            $teamQuery->where('club_id', $user->club_id);
+
+            if ($user->hasRole(RoleName::User)) {
+                $teamQuery->whereIn('teams.id', $user->teams()->select('teams.id'));
+            }
+        });
     }
 
     /**

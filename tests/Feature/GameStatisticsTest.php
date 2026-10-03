@@ -19,11 +19,11 @@ beforeEach(function () {
 
 test('the statistics button opens the game box score', function () {
     $club = Club::factory()->create();
-    $member = User::factory()->memberOf($club)->create();
     $team = Team::factory()->create([
         'club_id' => $club->id,
         'name' => 'ADC',
     ]);
+    $member = User::factory()->memberOf($club)->withTeams($team)->create();
     $game = Game::factory()->create([
         'team_id' => $team->id,
         'opponent' => 'Benfica',
@@ -110,8 +110,17 @@ test('the statistics button opens the game box score', function () {
     ]);
 
     $this->actingAs($member)
-        ->get(route('statistics.show', $game))
-        ->assertOk();
+        ->get(route('statistics.show', ['game' => $game, 'from' => 'dashboard']))
+        ->assertOk()
+        ->assertSee(route('dashboard'), false);
+
+    $this->actingAs($member)
+        ->get(route('statistics.show', ['game' => $game, 'from' => 'statistics']))
+        ->assertSee(route('statistics.index'), false);
+
+    $this->actingAs($member)
+        ->get(route('statistics.show', ['game' => $game, 'from' => 'record']))
+        ->assertSee(route('statistics.record', $game), false);
 
     Livewire::actingAs($member)
         ->test(StatisticsShow::class, ['game' => $game])
@@ -143,7 +152,7 @@ test('the statistics button opens the game box score', function () {
             && count($charts[1]['home']) === 2
             && count($charts[1]['away']) === 0)
         ->assertSee('FGM-A')
-        ->assertSeeHtml('href="'.route('statistics.record', $game).'"');
+        ->assertSet('backUrl', route('statistics.index'));
 });
 
 test('a club cannot open another clubs game statistics', function () {

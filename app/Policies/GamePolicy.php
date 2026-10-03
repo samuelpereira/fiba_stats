@@ -61,7 +61,7 @@ class GamePolicy
 
         $game->loadMissing('team');
 
-        return $user->club_id === $game->team->club_id;
+        return $user->canCollectStatisticsForTeam($game->team);
     }
 
     private function manages(User $actor, Game $game): bool

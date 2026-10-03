@@ -13,7 +13,10 @@ class UpdateManagedUser
     /**
      * Update a user-role account. A club role cannot move the user to another club.
      */
-    public function handle(User $actor, User $user, string $name, string $email, bool $enabled, ?string $password = null, ?int $clubId = null): User
+    /**
+     * @param  list<int|string>  $teamIds
+     */
+    public function handle(User $actor, User $user, string $name, string $email, bool $enabled, ?string $password = null, ?int $clubId = null, array $teamIds = []): User
     {
         if (! $user->hasRole(RoleName::User)) {
             throw new AuthorizationException;
@@ -48,6 +51,8 @@ class UpdateManagedUser
         }
 
         $user->save();
+
+        (new SyncUserAssignedTeams)->handle($user, $user->club_id, $teamIds);
 
         return $user;
     }

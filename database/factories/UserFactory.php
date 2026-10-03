@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Enums\RoleName;
 use App\Models\Club;
+use App\Models\Team;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -61,6 +62,13 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes): array => [
             'club_id' => $club->id,
         ])->withRole(RoleName::User);
+    }
+
+    public function withTeams(Team ...$teams): static
+    {
+        return $this->afterCreating(function (User $user) use ($teams): void {
+            $user->teams()->sync(collect($teams)->pluck('id')->all());
+        });
     }
 
     public function withRole(RoleName $role): static

@@ -27,6 +27,8 @@ test('exit before the fourth quarter ends returns to the statistics list', funct
 
     giveStartingFive($game, $player);
 
+    grantStatisticsTeamAccess($member, $game);
+
     Livewire::actingAs($member)
         ->test(StatisticsRecord::class, ['game' => $game])
         ->call('attemptExit')
@@ -73,6 +75,8 @@ test('exit after the fourth quarter ends can leave without finishing the game', 
     $player = Player::factory()->create(['team_id' => $game->team_id]);
 
     giveStartingFive($game, $player);
+
+    grantStatisticsTeamAccess($member, $game);
 
     Livewire::actingAs($member)
         ->test(StatisticsRecord::class, ['game' => $game])

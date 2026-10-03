@@ -6,6 +6,7 @@ use App\Actions\UpdateManagedUser;
 use App\Concerns\ProfileValidationRules;
 use App\Enums\PermissionName;
 use App\Livewire\Concerns\InteractsWithAuthenticatedUser;
+use App\Livewire\Concerns\ManagesUserTeamAssignments;
 use App\Models\Club;
 use App\Models\User;
 use Flux\Flux;
@@ -20,7 +21,7 @@ use Livewire\Component;
 #[Title('Edit user')]
 class Edit extends Component
 {
-    use InteractsWithAuthenticatedUser, ProfileValidationRules;
+    use InteractsWithAuthenticatedUser, ManagesUserTeamAssignments, ProfileValidationRules;
 
     #[Locked]
     public User $user;
@@ -46,6 +47,12 @@ class Edit extends Component
         $this->email = $user->email;
         $this->clubId = (string) $user->club_id;
         $this->enabled = $user->enabled;
+        $this->teamIds = array_values(
+            $user->teams()
+                ->pluck('teams.id')
+                ->map(fn (int $id): string => (string) $id)
+                ->all(),
+        );
     }
 
     public function save(UpdateManagedUser $updateManagedUser): void
@@ -68,6 +75,8 @@ class Edit extends Component
             $rules['clubId'] = ['required', 'integer', Rule::exists(Club::class, 'id')];
         }
 
+        $rules = array_merge($rules, $this->teamAssignmentRules(requireAtLeastOneTeam: false));
+
         $validated = $this->validate($rules);
 
         $updateManagedUser->handle(
@@ -78,6 +87,7 @@ class Edit extends Component
             (bool) $validated['enabled'],
             $validated['password'] ?? null,
             $actor->can(PermissionName::CreateClubs->value) ? (int) $validated['clubId'] : null,
+            $validated['teamIds'],
         );
 
         Flux::toast(variant: 'success', text: __('User updated.'));
