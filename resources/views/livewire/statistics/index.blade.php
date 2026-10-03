@@ -21,17 +21,7 @@
                         <x-listing.cell primary>{{ $game->team->name }}</x-listing.cell>
                         <x-listing.cell :label="__('Opponent')">{{ $game->opponent }}</x-listing.cell>
                         <x-listing.cell actions>
-                            @if ($game->status === \App\Enums\GameStatus::Played)
-                                <a href="{{ route('statistics.show', ['game' => $game, 'from' => 'statistics']) }}" wire:navigate class="inline-flex items-center gap-2 text-sm font-medium text-zinc-900 hover:text-zinc-600">
-                                    <flux:icon name="chart-bar" class="size-4" />
-                                    {{ __('Statistics') }}
-                                </a>
-                            @else
-                                <a href="{{ route('statistics.record', $game) }}" wire:navigate class="inline-flex items-center gap-2 text-sm font-medium text-zinc-900 hover:text-zinc-600">
-                                    <flux:icon name="clipboard-document-list" class="size-4" />
-                                    {{ __('Collect') }}
-                                </a>
-                            @endif
+                            <x-statistics.game-actions :game="$game" from="statistics" />
                         </x-listing.cell>
                     </tr>
                 @empty

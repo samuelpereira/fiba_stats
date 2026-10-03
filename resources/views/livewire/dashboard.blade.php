@@ -11,7 +11,7 @@
     </div>
 
     @if ($this->summaryCards !== [])
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="grid grid-cols-2 gap-4 xl:grid-cols-4">
             @foreach ($this->summaryCards as $card)
                 @if ($card['href'])
                     <a
@@ -46,13 +46,7 @@
                                     <p class="truncate font-medium text-zinc-900">{{ $game->team->name }} · {{ $game->opponent }}</p>
                                     <p class="text-sm text-zinc-500">{{ $game->date_time->format('d/m/Y H:i') }} · {{ __($game->home_away->label()) }}</p>
                                 </div>
-                                <div class="flex shrink-0 items-center gap-2">
-                                    @can('collect', $game)
-                                        <a href="{{ route('statistics.record', $game) }}" wire:navigate class="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-800 hover:border-zinc-900">
-                                            {{ __('Collect') }}
-                                        </a>
-                                    @endcan
-                                </div>
+                                <x-statistics.game-actions :game="$game" from="dashboard" class="shrink-0" />
                             </li>
                         @endforeach
                     </ul>
@@ -76,13 +70,7 @@
                                         @endif
                                     </p>
                                 </div>
-                                <div class="flex shrink-0 items-center gap-2">
-                                    @can('collect', $game)
-                                        <a href="{{ route('statistics.show', ['game' => $game, 'from' => 'dashboard']) }}" wire:navigate class="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-800 hover:border-zinc-900">
-                                            {{ __('Statistics') }}
-                                        </a>
-                                    @endcan
-                                </div>
+                                <x-statistics.game-actions :game="$game" from="dashboard" class="shrink-0" />
                             </li>
                         @endforeach
                     </ul>

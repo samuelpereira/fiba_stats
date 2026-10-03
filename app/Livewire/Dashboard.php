@@ -4,10 +4,10 @@ namespace App\Livewire;
 
 use App\Enums\GameStatus;
 use App\Enums\PermissionName;
+use App\Enums\RoleName;
 use App\Livewire\Concerns\InteractsWithAuthenticatedUser;
 use App\Models\Club;
 use App\Models\Game;
-use App\Models\Player;
 use App\Models\Season;
 use App\Models\Team;
 use App\Models\User;
@@ -49,11 +49,17 @@ class Dashboard extends Component
             ];
         }
 
-        if ($actor->can('viewAny', Season::class)) {
+        if ($actor->can('viewAny', User::class)) {
+            $usersQuery = User::query()->role(RoleName::User);
+
+            if (! $actor->can(PermissionName::CreateClubs->value)) {
+                $usersQuery->where('club_id', $actor->club_id);
+            }
+
             $cards[] = [
-                'label' => __('Seasons'),
-                'value' => Season::query()->count(),
-                'href' => route('seasons.index'),
+                'label' => __('Users'),
+                'value' => $usersQuery->count(),
+                'href' => route('users.index'),
             ];
         }
 
@@ -65,41 +71,11 @@ class Dashboard extends Component
             ];
         }
 
-        if ($actor->can('viewAny', Player::class)) {
-            $cards[] = [
-                'label' => __('Players'),
-                'value' => $this->playersQuery()->count(),
-                'href' => route('players.index'),
-            ];
-        }
-
         if ($actor->can('viewAny', Game::class)) {
-            $games = $this->gamesQuery();
-
             $cards[] = [
                 'label' => __('Games'),
-                'value' => (clone $games)->count(),
+                'value' => $this->gamesQuery()->count(),
                 'href' => route('games.index'),
-            ];
-
-            $cards[] = [
-                'label' => __('Scheduled'),
-                'value' => (clone $games)->where('status', GameStatus::Scheduled)->count(),
-                'href' => route('games.index'),
-            ];
-
-            $cards[] = [
-                'label' => __('Played'),
-                'value' => (clone $games)->where('status', GameStatus::Played)->count(),
-                'href' => route('games.index'),
-            ];
-        }
-
-        if ($actor->can('viewAny', User::class) && $actor->can(PermissionName::CreateClubs->value)) {
-            $cards[] = [
-                'label' => __('Users'),
-                'value' => User::query()->whereNotNull('club_id')->count(),
-                'href' => route('users.index'),
             ];
         }
 
@@ -166,26 +142,6 @@ class Dashboard extends Component
 
         if (! $this->actor()->can(PermissionName::CreateClubs->value)) {
             $query->where('club_id', $this->actor()->club_id);
-        }
-
-        return $query;
-    }
-
-    /**
-     * @return Builder<Player>
-     */
-    private function playersQuery(): Builder
-    {
-        $query = Player::query();
-
-        $currentSeason = $this->currentSeason();
-
-        if ($currentSeason !== null) {
-            $query->whereHas('team', fn (Builder $teamQuery) => $teamQuery->where('season_id', $currentSeason->id));
-        }
-
-        if (! $this->actor()->can(PermissionName::CreateClubs->value)) {
-            $query->whereHas('team', fn (Builder $teamQuery) => $teamQuery->where('club_id', $this->actor()->club_id));
         }
 
         return $query;

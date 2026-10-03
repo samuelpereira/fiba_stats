@@ -670,7 +670,9 @@ test('the statistics index links played games to the box score and others to col
     Livewire::actingAs($member)
         ->test(StatisticsIndex::class)
         ->assertSee(route('statistics.show', $played), false)
+        ->assertSee(route('statistics.record', $played), false)
         ->assertSee(route('statistics.record', $scheduled), false)
+        ->assertDontSee(route('statistics.show', $scheduled), false)
         ->assertSeeHtml('wire:key="game-'.$played->uuid.'"')
         ->assertSee('Played Opponent')
         ->assertSee('Scheduled Opponent');
