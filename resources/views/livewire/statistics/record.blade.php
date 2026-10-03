@@ -623,16 +623,46 @@
 </flux:modal>
 @once
     <script>
-        document.addEventListener('alpine:init', () => {
-            if (! window.Alpine.store('collectPane')) {
-                window.Alpine.store('collectPane', { name: 'scoring' });
-            }
+        (function () {
+            const registerGameClockListeners = () => {
+                if (window.__gameClockListenersRegistered) {
+                    return;
+                }
 
-            if (window.Alpine.store('gameClock')) {
-                return;
-            }
+                window.__gameClockListenersRegistered = true;
 
-            window.Alpine.store('gameClock', {
+                document.addEventListener('pointerdown', (event) => {
+                    const clock = window.Alpine.store('gameClock');
+
+                    if (! clock?.alive()) {
+                        return;
+                    }
+
+                    if (event.target instanceof Element && event.target.closest('input, select, textarea')) {
+                        return;
+                    }
+
+                    clock.publish();
+                }, true);
+
+                document.addEventListener('livewire:navigated', () => {
+                    requestAnimationFrame(() => {
+                        window.ensureGameClockStore?.();
+                        window.Alpine.store('gameClock')?.syncFromStatisticsRecord();
+                    });
+                });
+            };
+
+            const createGameClockStore = () => {
+                if (! window.Alpine?.store('collectPane')) {
+                    window.Alpine.store('collectPane', { name: 'scoring' });
+                }
+
+                if (window.Alpine.store('gameClock')) {
+                    return;
+                }
+
+                window.Alpine.store('gameClock', {
                 componentId: null,
                 wire: null,
                 remaining: 600,
@@ -676,6 +706,10 @@
                     this.start();
                 },
                 press() {
+                    if (this.wire === null || ! this.alive()) {
+                        this.syncFromStatisticsRecord();
+                    }
+
                     const wire = this.wire;
 
                     if (wire === null) {
@@ -814,39 +848,31 @@
                 },
             });
 
-            document.addEventListener('pointerdown', (event) => {
-                const clock = window.Alpine.store('gameClock');
+                registerGameClockListeners();
+            };
 
-                if (! clock?.alive()) {
+            window.ensureGameClockStore = () => {
+                if (typeof window.Alpine === 'undefined') {
+                    document.addEventListener('alpine:init', createGameClockStore, { once: true });
+
                     return;
                 }
 
-                if (event.target instanceof Element && event.target.closest('input, select, textarea')) {
-                    return;
-                }
+                createGameClockStore();
+            };
 
-                clock.publish();
-            }, true);
-
-            document.addEventListener('livewire:navigated', () => {
-                requestAnimationFrame(() => {
-                    window.Alpine.store('gameClock')?.syncFromStatisticsRecord();
-                });
-            });
-        });
+            window.ensureGameClockStore();
+        })();
     </script>
 @endonce
 @script
     <script>
         const bindGameClock = () => {
+            window.ensureGameClockStore?.();
             window.Alpine.store('gameClock')?.bind($wire);
         };
 
-        if (window.Alpine.store('gameClock')) {
-            bindGameClock();
-        } else {
-            document.addEventListener('alpine:init', bindGameClock, { once: true });
-        }
+        bindGameClock();
 
         document.addEventListener('livewire:navigated', () => {
             requestAnimationFrame(bindGameClock);
