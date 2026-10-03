@@ -500,15 +500,14 @@
     @endif
 </flux:modal>
 
-<flux:modal wire:model="choosingShotLocation" :closable="false" class="statistics-collect-modal !border-0 !bg-white !p-0">
+<flux:modal wire:model="choosingShotLocation" :closable="false" class="statistics-collect-modal !bg-white">
     @if ($pendingStat?->isFieldGoal())
         <div class="flex h-dvh min-h-0 flex-col text-zinc-900">
-            @include('livewire.statistics.partials.collect-modal-header', ['title' => __('Mark shot location'), 'cancelAction' => 'cancelShotLocation'])
-            <p class="px-4 text-center text-sm text-zinc-600">{{ __($pendingStat->pickerTitle()) }}</p>
+            @include('livewire.statistics.partials.collect-modal-header', ['title' => __($pendingStat->pickerTitle()), 'cancelAction' => 'cancelShotLocation'])
             @error('shotLocation')
-                <p class="mt-3 text-center text-sm text-red-600">{{ $message }}</p>
+                <p class="px-4 text-center text-sm text-red-600">{{ $message }}</p>
             @enderror
-            <div class="mt-4 flex flex-1 flex-col justify-center px-4 sm:px-6" wire:key="shot-court-{{ $pendingType }}">
+            <div class="mt-4 flex flex-1 flex-col justify-start px-4 sm:px-6" wire:key="shot-court-{{ $pendingType }}">
                 <x-shot-court :made="$pendingStat->isSolid()" />
             </div>
         </div>
@@ -586,7 +585,7 @@
                             'border-zinc-300 text-zinc-900' => $tone === 'plain',
                             'ring-2 ring-zinc-900 ring-inset' => $editingType === $stat->value,
                         ])
-                    >{{ $stat->logLabel() }}</button>
+                    >{{ __($stat->logLabel()) }}</button>
                 @endforeach
             </div>
         </div>

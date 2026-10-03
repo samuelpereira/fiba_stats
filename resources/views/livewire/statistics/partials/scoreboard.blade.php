@@ -75,7 +75,7 @@
         <p class="truncate text-sm font-semibold">{{ $teamName }}</p>
         <div class="flex items-center justify-between gap-2 lg:gap-3">
             <p @class(['text-3xl font-bold tracking-tight tabular-nums leading-none', 'order-1' => $weAreHome, 'order-2' => ! $weAreHome])>{{ $this->teamPoints() }}</p>
-            <div style="font-size: 13px" @class(['shrink-0 leading-tight text-zinc-500', 'order-2 text-right' => $weAreHome, 'order-1 text-left' => ! $weAreHome])>
+            <div @class(['shrink-0 text-[11px] leading-tight text-zinc-500', 'order-2 text-right' => $weAreHome, 'order-1 text-left' => ! $weAreHome])>
                 @if ($weAreHome)
                     <p class="flex items-center justify-end gap-3">{{ __('Team Foul') }}<span @class(['font-bold tabular-nums', 'text-green-700' => $this->fouls['team'] >= 1 && $this->fouls['team'] <= 3, 'text-orange-600' => $this->fouls['team'] === 4, 'text-red-700' => $this->fouls['team'] >= 5, 'text-zinc-900' => $this->fouls['team'] < 1])>{{ $this->fouls['team'] }}</span></p>
                     <p class="flex items-center justify-end gap-3">{{ __('Timeout') }}<span @class(['font-bold tabular-nums', 'text-red-700' => $this->timeouts['team'] >= $this->timeouts['allowance'], 'text-zinc-900' => $this->timeouts['team'] < $this->timeouts['allowance']])>{{ $this->timeouts['team'] }}/{{ $this->timeouts['allowance'] }}</span></p>
@@ -90,7 +90,7 @@
         <p class="truncate text-sm font-semibold">{{ $opponentName }}</p>
         <div class="flex items-center justify-between gap-2 lg:gap-3">
             <p @class(['text-3xl font-bold tracking-tight tabular-nums leading-none', 'order-2' => $weAreHome, 'order-1' => ! $weAreHome])>{{ $opponentPoints }}</p>
-            <div style="font-size: 13px" @class(['shrink-0 leading-tight text-zinc-500', 'order-1 text-left' => $weAreHome, 'order-2 text-right' => ! $weAreHome])>
+            <div @class(['shrink-0 text-[11px] leading-tight text-zinc-500', 'order-1 text-left' => $weAreHome, 'order-2 text-right' => ! $weAreHome])>
                 @if ($weAreHome)
                     <p class="flex items-center justify-start gap-3"><span @class(['font-bold tabular-nums', 'text-green-700' => $this->fouls['opponent'] >= 1 && $this->fouls['opponent'] <= 3, 'text-orange-600' => $this->fouls['opponent'] === 4, 'text-red-700' => $this->fouls['opponent'] >= 5, 'text-zinc-900' => $this->fouls['opponent'] < 1])>{{ $this->fouls['opponent'] }}</span><span>{{ __('Team Foul') }}</span></p>
                     <p class="flex items-center justify-start gap-3"><span @class(['font-bold tabular-nums', 'text-red-700' => $this->timeouts['opponent'] >= $this->timeouts['allowance'], 'text-zinc-900' => $this->timeouts['opponent'] < $this->timeouts['allowance']])>{{ $this->timeouts['opponent'] }}/{{ $this->timeouts['allowance'] }}</span><span>{{ __('Timeout') }}</span></p>

@@ -32,7 +32,7 @@
                     @endif
                 </td>
                 <td class="px-2 py-2 text-right" @style(['box-shadow: inset -4px 0 0 '.$awayColor => $line['side'] === 'away'])>
-                    <p @class(['font-medium', 'text-zinc-400' => $line['missed'], 'text-zinc-900' => ! $line['missed']])>{{ $line['label'] }}</p>
+                    <p @class(['font-medium', 'text-zinc-400' => $line['missed'], 'text-zinc-900' => ! $line['missed']])>{{ __($line['label']) }}</p>
                     @if ($line['detail'] !== '')
                         <p class="text-xs text-zinc-500">{{ $line['detail'] }}</p>
                     @endif
