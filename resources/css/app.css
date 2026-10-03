@@ -41,21 +41,6 @@
         display: none !important;
     }
 
-    /* Flux toasts: Safari (incl. iPad) can paint closed popover chrome as an empty box. */
-    ui-toast-group[popover]:not(:popover-open):not(.\\:popover-open),
-    ui-toast[popover]:not(:popover-open):not(.\\:popover-open) {
-        display: none !important;
-    }
-
-    ui-toast-group[popover]:popover-open,
-    ui-toast-group[popover].\\:popover-open {
-        display: flex;
-    }
-
-    ui-toast-group > ui-toast {
-        display: none;
-    }
-
     *,
     ::after,
     ::before,
@@ -136,3 +121,26 @@ select:focus[data-flux-control] {
 /* \[:where(&)\]:size-4 {
     @apply size-4;
 } */
+
+/*
+ * Flux toast popovers (unlayered — must override flux.css ui-toast-group { display: flex }).
+ * Closed groups are fixed at bottom-end and paint an empty bordered box in Chrome/Safari.
+ */
+ui-toast-group[popover],
+ui-toast[popover] {
+    display: none !important;
+}
+
+ui-toast-group[popover]:popover-open,
+ui-toast-group[popover].\\:popover-open {
+    display: flex !important;
+}
+
+ui-toast[popover]:popover-open,
+ui-toast[popover].\\:popover-open {
+    display: block !important;
+}
+
+ui-toast-group > ui-toast {
+    display: none !important;
+}
