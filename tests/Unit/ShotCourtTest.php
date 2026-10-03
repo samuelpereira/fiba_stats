@@ -3,11 +3,11 @@
 use App\Enums\StatType;
 use App\Support\ShotCourt;
 
-test('two point shots can be marked anywhere inside the court', function () {
+test('two point shots must be inside the three point arc', function () {
     expect(ShotCourt::allows(StatType::TwoPointMade, 500, 300))->toBeTrue()
-        ->and(ShotCourt::allows(StatType::TwoPointMade, 500, 520))->toBeTrue()
-        ->and(ShotCourt::allows(StatType::TwoPointMade, 150, 400))->toBeTrue()
-        ->and(ShotCourt::allows(StatType::TwoPointMissed, 850, 700))->toBeTrue();
+        ->and(ShotCourt::allows(StatType::TwoPointMade, 500, 520))->toBeFalse()
+        ->and(ShotCourt::allows(StatType::TwoPointMade, 110, ShotCourt::BaselineY))->toBeFalse()
+        ->and(ShotCourt::allows(StatType::TwoPointMissed, 850, 700))->toBeFalse();
 });
 
 test('three point shots must be outside the three point arc', function () {

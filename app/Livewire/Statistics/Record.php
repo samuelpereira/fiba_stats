@@ -526,7 +526,7 @@ class Record extends Component
         $type = StatType::from($this->pendingType);
 
         if (! ShotCourt::allows($type, $courtX, $courtY)) {
-            $this->addError('shotLocation', __('Mark the shot inside the court. For 3P, tap outside the three-point line.'));
+            $this->addError('shotLocation', __('Mark the shot inside the 2-point area for 2P, or outside for 3P.'));
 
             return;
         }
