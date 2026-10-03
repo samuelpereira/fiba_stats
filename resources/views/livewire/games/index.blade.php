@@ -18,7 +18,7 @@
         </thead>
         <tbody>
             @forelse ($this->games as $game)
-                <tr wire:key="game-{{ $game->id }}" class="border-b border-zinc-100 last:border-b-0">
+                <tr wire:key="game-{{ $game->uuid }}" class="border-b border-zinc-100 last:border-b-0">
                     <td class="px-4 py-4 text-zinc-600">{{ $game->date_time->format('d/m/Y H:i') }}</td>
                     <td class="px-4 py-4 text-zinc-600">{{ $game->team->name }}</td>
                     <td class="px-4 py-4 font-semibold">{{ $game->opponent }}</td>
@@ -32,7 +32,7 @@
                     <td class="px-4 py-4">
                         <x-listing.actions :edit-href="route('games.edit', $game)">
                             <x-slot:delete>
-                                <x-listing.delete-button :record-id="$game->id" />
+                                <x-listing.delete-button :record-id="$game->uuid" />
                             </x-slot:delete>
                         </x-listing.actions>
                     </td>

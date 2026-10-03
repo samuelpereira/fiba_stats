@@ -47,9 +47,9 @@ class Index extends Component
         return 'confirm-delete';
     }
 
-    protected function recordForDeletion(int $id): Model
+    protected function recordForDeletion(int|string $key): Model
     {
-        return User::query()->findOrFail($id);
+        return User::query()->findOrFail($key);
     }
 
     protected function performDeletion(Model $record): void

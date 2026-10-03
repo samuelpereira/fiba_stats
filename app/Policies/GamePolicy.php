@@ -34,6 +34,36 @@ class GamePolicy
         return $this->manages($user, $game);
     }
 
+    public function collectAny(User $user): bool
+    {
+        if ($user->hasRole(RoleName::Administrator)) {
+            return true;
+        }
+
+        return ($user->hasRole(RoleName::Club) || $user->hasRole(RoleName::User))
+            && $user->club_id !== null;
+    }
+
+    public function importLog(User $user, Game $game): bool
+    {
+        return $user->hasRole(RoleName::Administrator);
+    }
+
+    public function collect(User $user, Game $game): bool
+    {
+        if (! $this->collectAny($user)) {
+            return false;
+        }
+
+        if ($user->hasRole(RoleName::Administrator)) {
+            return true;
+        }
+
+        $game->loadMissing('team');
+
+        return $user->club_id === $game->team->club_id;
+    }
+
     private function manages(User $actor, Game $game): bool
     {
         if (! $actor->can(PermissionName::CreateUsers->value)) {

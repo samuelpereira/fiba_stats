@@ -14,4 +14,12 @@ enum HomeAway: string
             self::Away => 'Away',
         };
     }
+
+    public function opposite(): self
+    {
+        return match ($this) {
+            self::Home => self::Away,
+            self::Away => self::Home,
+        };
+    }
 }

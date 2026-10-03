@@ -1,6 +1,11 @@
 <?php
 
+use App\Livewire\Statistics\Record;
+use App\Models\Game;
+use App\Models\Player;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Features\SupportTesting\Testable;
 use Tests\TestCase;
 
 /*
@@ -44,7 +49,47 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+function giveStartingFive(Game $game, ?Player $player = null): void
 {
-    // ..
+    if ($game->players()->wherePivot('starter', true)->count() === 5) {
+        return;
+    }
+
+    $squad = collect();
+
+    if ($player instanceof Player && $player->team_id === $game->team_id) {
+        $squad->push($player);
+    }
+
+    while ($squad->count() < 5) {
+        $squad->push(Player::factory()->create([
+            'team_id' => $game->team_id,
+        ]));
+    }
+
+    $game->players()->sync(
+        $squad->mapWithKeys(fn (Player $squadPlayer): array => [
+            $squadPlayer->id => ['starter' => true],
+        ])->all(),
+    );
+}
+
+function startCollectingPeriod(Testable $test): Testable
+{
+    return $test->call('recordQuarterStart');
+}
+
+function statisticsRecord(User $user, Game $game, bool $openPeriod = true): Testable
+{
+    $test = Livewire::actingAs($user)->test(Record::class, ['game' => $game]);
+
+    if (! $openPeriod || $test->get('periodIsOpen')) {
+        return $test;
+    }
+
+    if ($test->get('awaitingQuarterStart')) {
+        return $test->call('startQuarter');
+    }
+
+    return startCollectingPeriod($test);
 }

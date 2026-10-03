@@ -32,5 +32,9 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="GAME_QUARTER_MINUTES" value="10"/>
+        <env name="GAME_OVERTIME_MINUTES" value="5"/>
+        <env name="GAME_HOME_COLOR" value="purple"/>
+        <env name="GAME_AWAY_COLOR" value="blue"/>
     </php>
 </phpunit>

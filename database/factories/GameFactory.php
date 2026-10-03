@@ -29,6 +29,7 @@ class GameFactory extends Factory
             'journey' => null,
             'home_points' => null,
             'away_points' => null,
+            ...Game::defaultAttributes(),
             'status' => GameStatus::Scheduled,
         ];
     }

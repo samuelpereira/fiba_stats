@@ -30,6 +30,7 @@ class CreateGame
         $team = $this->teamFor($actor, $teamId);
 
         return Game::query()->create([
+            ...Game::defaultAttributes(),
             'team_id' => $team->id,
             'fpb_id' => $this->blankToNull($fpbId),
             'opponent' => $opponent,

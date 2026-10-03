@@ -1,0 +1,105 @@
+<?php
+
+use App\Enums\GameStatus;
+use App\Enums\HomeAway;
+use App\Livewire\Teams\Edit as EditTeam;
+use App\Models\Game;
+use App\Models\Player;
+use App\Models\Team;
+use App\Models\User;
+use App\Services\Fpb\FpbGamesImporter;
+use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Support\Facades\Http;
+use Livewire\Livewire;
+
+beforeEach(function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+});
+
+test('fpb roster import creates players and keeps disabled players disabled', function () {
+    Http::fake([
+        'https://fpb.test/equipa' => Http::response(<<<'HTML'
+<div class="roster__player">
+<a href="/atletas/4242"></a>
+<h2 class="header__heading">Miguel Costa</h2>
+<div class="header_position">Base</div>
+<div class="header_jnumber">7</div>
+</div>
+HTML),
+    ]);
+
+    $team = Team::factory()->create([
+        'fpb_url' => 'https://fpb.test/equipa',
+    ]);
+
+    app(FpbGamesImporter::class)->importPlayers($team, prune: false);
+
+    $player = Player::query()->where('fpb_id', '4242')->first();
+
+    expect($player)->not->toBeNull()
+        ->and($player->name)->toBe('Miguel Costa')
+        ->and($player->enabled)->toBeTrue();
+
+    $player->update(['enabled' => false]);
+
+    app(FpbGamesImporter::class)->importPlayers($team, prune: false);
+
+    expect($player->fresh()->enabled)->toBeFalse();
+});
+
+test('fpb games import upserts fixtures for the club on the page', function () {
+    Http::fake([
+        'https://fpb.test/equipa' => Http::response(<<<'HTML'
+<h3 class="date">15 OUT 2025</h3>
+<a href="/ficha-de-jogo?internalID=1001">
+<span class="fullName">CA Gondomar</span>
+<span class="fullName">FC Porto</span>
+<div class="results_text">80</div>
+<div class="results_text">70</div>
+</a>
+HTML),
+    ]);
+
+    $team = Team::factory()->create([
+        'name' => 'CA Gondomar',
+        'fpb_url' => 'https://fpb.test/equipa',
+    ]);
+
+    $stats = app(FpbGamesImporter::class)->import($team, prune: false);
+
+    expect($stats['created'])->toBe(1);
+
+    $game = Game::query()->where('fpb_id', '1001')->first();
+
+    expect($game)->not->toBeNull()
+        ->and($game->team_id)->toBe($team->id)
+        ->and($game->opponent)->toBe('FC Porto')
+        ->and($game->home_away)->toBe(HomeAway::Home)
+        ->and($game->home_points)->toBe(80)
+        ->and($game->away_points)->toBe(70)
+        ->and($game->status)->toBe(GameStatus::Played);
+});
+
+test('team edit can trigger fpb imports from livewire', function () {
+    Http::fake([
+        'https://fpb.test/equipa' => Http::response(<<<'HTML'
+<div class="roster__player">
+<a href="/atletas/777"></a>
+<h2 class="header__heading">Ana Silva</h2>
+<div class="header_jnumber">11</div>
+</div>
+HTML),
+    ]);
+
+    $administrator = User::factory()->administrator()->create();
+    $team = Team::factory()->create(['fpb_url' => null]);
+
+    Livewire::actingAs($administrator)
+        ->test(EditTeam::class, ['team' => $team])
+        ->set('fpbUrl', 'https://fpb.test/equipa')
+        ->call('importFpbRoster')
+        ->assertHasNoErrors();
+
+    expect(Player::query()->where('fpb_id', '777')->exists())->toBeTrue()
+        ->and($team->fresh()->fpb_url)->toBe('https://fpb.test/equipa');
+});

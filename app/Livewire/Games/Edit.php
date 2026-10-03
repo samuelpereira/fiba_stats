@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Games;
 
+use App\Actions\ImportGameLog;
 use App\Actions\UpdateGame as UpdateGameAction;
 use App\Enums\GameStatus;
 use App\Enums\HomeAway;
@@ -17,11 +18,14 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 
 #[Title('Edit game')]
 class Edit extends Component
 {
     use InteractsWithAuthenticatedUser;
+    use WithFileUploads;
 
     #[Locked]
     public Game $game;
@@ -47,6 +51,8 @@ class Edit extends Component
     public string $awayPoints = '';
 
     public string $status = '';
+
+    public ?TemporaryUploadedFile $logFile = null;
 
     public function mount(Game $game): void
     {
@@ -93,6 +99,34 @@ class Edit extends Component
         $this->redirect(route('games.index'), navigate: true);
     }
 
+    public function importLog(ImportGameLog $importGameLog): void
+    {
+        $this->authorize('importLog', $this->game);
+
+        $this->validate([
+            'logFile' => ['required', 'file', 'extensions:csv,txt', 'max:2048'],
+        ]);
+
+        $file = $this->logFile;
+
+        if (! $file instanceof TemporaryUploadedFile) {
+            return;
+        }
+
+        $contents = $file->get();
+
+        if (! is_string($contents)) {
+            return;
+        }
+
+        $imported = $importGameLog->handle($this->game, $contents);
+
+        $this->reset('logFile');
+        unset($this->hasStatistics);
+
+        Flux::toast(variant: 'success', text: __('Imported :count log events.', ['count' => $imported]));
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -137,5 +171,11 @@ class Edit extends Component
         }
 
         return $query->get();
+    }
+
+    #[Computed]
+    public function hasStatistics(): bool
+    {
+        return $this->game->events()->exists();
     }
 }

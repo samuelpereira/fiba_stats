@@ -24,9 +24,9 @@ class Index extends Component
         $this->authorize('viewAny', Season::class);
     }
 
-    public function markAsCurrent(int $seasonId, MarkSeasonAsCurrent $markSeasonAsCurrent): void
+    public function markAsCurrent(string $seasonUuid, MarkSeasonAsCurrent $markSeasonAsCurrent): void
     {
-        $season = Season::query()->findOrFail($seasonId);
+        $season = Season::findByPublicKey($seasonUuid);
 
         $this->authorize('update', $season);
 
@@ -49,9 +49,9 @@ class Index extends Component
         return 'confirm-delete';
     }
 
-    protected function recordForDeletion(int $id): Model
+    protected function recordForDeletion(int|string $key): Model
     {
-        return Season::query()->findOrFail($id);
+        return Season::findByPublicKey($key);
     }
 
     protected function performDeletion(Model $record): void

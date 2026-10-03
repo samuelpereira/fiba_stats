@@ -18,7 +18,7 @@
         </thead>
         <tbody>
             @forelse ($this->teams as $team)
-                <tr wire:key="team-{{ $team->id }}" class="border-b border-zinc-100 last:border-b-0">
+                <tr wire:key="team-{{ $team->uuid }}" class="border-b border-zinc-100 last:border-b-0">
                     <td class="px-4 py-4 font-semibold">{{ $team->name }}</td>
                     @can(\App\Enums\PermissionName::CreateClubs->value)
                         <td class="px-4 py-4 text-zinc-600">{{ $team->club->name }}</td>
@@ -30,7 +30,7 @@
                     <td class="px-4 py-4">
                         <x-listing.actions :edit-href="route('teams.edit', $team)">
                             <x-slot:delete>
-                                <x-listing.delete-button :record-id="$team->id" />
+                                <x-listing.delete-button :record-id="$team->uuid" />
                             </x-slot:delete>
                         </x-listing.actions>
                     </td>

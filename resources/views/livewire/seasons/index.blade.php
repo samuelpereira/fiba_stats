@@ -16,7 +16,7 @@
         </thead>
         <tbody>
             @forelse ($this->seasons as $season)
-                <tr wire:key="season-{{ $season->id }}" class="border-b border-zinc-100 last:border-b-0">
+                <tr wire:key="season-{{ $season->uuid }}" class="border-b border-zinc-100 last:border-b-0">
                     <td class="px-4 py-4 font-semibold">{{ $season->name }}</td>
                     <td class="px-4 py-4 text-zinc-600">{{ $season->starts_at->format('d/m/Y') }} – {{ $season->ends_at->format('d/m/Y') }}</td>
                     <td class="px-4 py-4 text-zinc-600">{{ $season->teams_count }}</td>
@@ -24,7 +24,7 @@
                         @if ($season->is_current)
                             <span class="inline-flex rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">{{ __('Current') }}</span>
                         @else
-                            <button type="button" wire:click="markAsCurrent({{ $season->id }})" class="text-sm text-zinc-500 hover:text-zinc-900">
+                            <button type="button" wire:click="markAsCurrent('{{ $season->uuid }}')" class="text-sm text-zinc-500 hover:text-zinc-900">
                                 {{ __('Mark as current') }}
                             </button>
                         @endif
@@ -32,7 +32,7 @@
                     <td class="px-4 py-4">
                         <x-listing.actions :edit-href="route('seasons.edit', $season)">
                             <x-slot:delete>
-                                <x-listing.delete-button :record-id="$season->id" />
+                                <x-listing.delete-button :record-id="$season->uuid" />
                             </x-slot:delete>
                         </x-listing.actions>
                     </td>

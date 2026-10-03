@@ -9,6 +9,7 @@ use App\Livewire\Concerns\InteractsWithAuthenticatedUser;
 use App\Models\Club;
 use App\Models\Season;
 use App\Models\Team;
+use App\Services\Fpb\FpbGamesImporter;
 use Closure;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
@@ -19,6 +20,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
+use Throwable;
 
 #[Title('Edit team')]
 class Edit extends Component
@@ -94,6 +96,57 @@ class Edit extends Component
         Flux::toast(variant: 'success', text: __('Team updated.'));
 
         $this->redirect(route('teams.index'), navigate: true);
+    }
+
+    public function importFpbGames(FpbGamesImporter $importer): void
+    {
+        $this->authorize('update', $this->team);
+
+        $this->validateOnly('fpbUrl', ['fpbUrl' => ['required', 'url', 'max:255']]);
+
+        $this->persistFpbUrlIfChanged();
+
+        try {
+            $stats = $importer->import($this->team->fresh());
+
+            Flux::toast(
+                variant: 'success',
+                text: __('FPB games: :total total · :created new · :updated updated · :deleted removed.', $stats),
+            );
+        } catch (Throwable $exception) {
+            Flux::toast(variant: 'danger', text: __('FPB import failed: :message', ['message' => $exception->getMessage()]));
+        }
+    }
+
+    public function importFpbRoster(FpbGamesImporter $importer): void
+    {
+        $this->authorize('update', $this->team);
+
+        $this->validateOnly('fpbUrl', ['fpbUrl' => ['required', 'url', 'max:255']]);
+
+        $this->persistFpbUrlIfChanged();
+
+        try {
+            $stats = $importer->importPlayers($this->team->fresh());
+
+            Flux::toast(
+                variant: 'success',
+                text: __('FPB roster: :total total · :created new · :updated updated · :deleted removed.', $stats),
+            );
+        } catch (Throwable $exception) {
+            Flux::toast(variant: 'danger', text: __('FPB import failed: :message', ['message' => $exception->getMessage()]));
+        }
+    }
+
+    private function persistFpbUrlIfChanged(): void
+    {
+        $url = trim($this->fpbUrl);
+
+        if ($this->team->fpb_url === ($url === '' ? null : $url)) {
+            return;
+        }
+
+        $this->team->update(['fpb_url' => $url === '' ? null : $url]);
     }
 
     /**

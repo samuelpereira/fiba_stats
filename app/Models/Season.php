@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasPublicUuid;
 use Carbon\CarbonImmutable;
 use Closure;
 use Database\Factories\SeasonFactory;
@@ -14,6 +15,7 @@ use Illuminate\Validation\Rule;
 
 /**
  * @property int $id
+ * @property string $uuid
  * @property string $name
  * @property string $slug
  * @property CarbonImmutable $starts_at
@@ -26,7 +28,7 @@ use Illuminate\Validation\Rule;
 class Season extends Model
 {
     /** @use HasFactory<SeasonFactory> */
-    use HasFactory;
+    use HasFactory, HasPublicUuid;
 
     /**
      * @return array<string, string>

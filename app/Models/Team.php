@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\Gender;
+use App\Models\Concerns\HasPublicUuid;
 use Carbon\CarbonImmutable;
 use Database\Factories\TeamFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -16,6 +17,7 @@ use Illuminate\Support\Str;
 
 /**
  * @property int $id
+ * @property string $uuid
  * @property int $club_id
  * @property int $season_id
  * @property string $name
@@ -38,7 +40,7 @@ use Illuminate\Support\Str;
 class Team extends Model
 {
     /** @use HasFactory<TeamFactory> */
-    use HasFactory;
+    use HasFactory, HasPublicUuid;
 
     /**
      * @return array<string, string>

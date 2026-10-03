@@ -36,6 +36,7 @@ test('an administrator creates a season from its name', function () {
     $season = Season::query()->where('name', '2026/2027')->first();
 
     expect($season)->not->toBeNull()
+        ->and($season->uuid)->toBeUuid()
         ->and($season->slug)->toBe('2026-2027')
         ->and($season->starts_at->toDateString())->toBe('2026-09-01')
         ->and($season->ends_at->toDateString())->toBe('2027-08-31')
@@ -95,7 +96,7 @@ test('marking a season as current clears the previous one', function () {
         ->test(SeasonIndex::class)
         ->assertSee('Current')
         ->assertSee('Mark as current')
-        ->call('markAsCurrent', $other->id);
+        ->call('markAsCurrent', $other->uuid);
 
     expect($other->refresh()->is_current)->toBeTrue()
         ->and($current->refresh()->is_current)->toBeFalse();
@@ -107,7 +108,7 @@ test('an administrator can delete a season without teams', function () {
 
     Livewire::actingAs($administrator)
         ->test(SeasonIndex::class)
-        ->call('confirmDelete', $season->id)
+        ->call('confirmDelete', $season->uuid)
         ->call('deleteConfirmed');
 
     expect(Season::query()->find($season->id))->toBeNull();
@@ -119,7 +120,7 @@ test('an administrator cannot delete a season that still has teams', function ()
 
     Livewire::actingAs($administrator)
         ->test(SeasonIndex::class)
-        ->call('confirmDelete', $team->season_id)
+        ->call('confirmDelete', $team->season->uuid)
         ->call('deleteConfirmed');
 
     expect(Season::query()->find($team->season_id))->not->toBeNull();
@@ -236,7 +237,7 @@ test('an administrator can delete a team without players', function () {
         ->test(TeamIndex::class)
         ->assertSee('Edit')
         ->assertSee('Delete')
-        ->call('confirmDelete', $team->id)
+        ->call('confirmDelete', $team->uuid)
         ->call('deleteConfirmed');
 
     expect(Team::query()->find($team->id))->toBeNull();
@@ -248,7 +249,7 @@ test('an administrator cannot delete a team that still has players', function ()
 
     Livewire::actingAs($administrator)
         ->test(TeamIndex::class)
-        ->call('confirmDelete', $player->team_id)
+        ->call('confirmDelete', $player->team->uuid)
         ->call('deleteConfirmed');
 
     expect(Team::query()->find($player->team_id))->not->toBeNull();
@@ -260,7 +261,7 @@ test('an administrator can delete a player', function () {
 
     Livewire::actingAs($administrator)
         ->test(PlayerIndex::class)
-        ->call('confirmDelete', $player->id)
+        ->call('confirmDelete', $player->uuid)
         ->call('deleteConfirmed');
 
     expect(Player::query()->find($player->id))->toBeNull();
@@ -290,6 +291,85 @@ test('an administrator cannot delete a club that still has teams', function () {
         ->call('deleteConfirmed');
 
     expect(Club::query()->find($team->club_id))->not->toBeNull();
+});
+
+test('a season is listed and edited by its uuid', function () {
+    $administrator = User::factory()->administrator()->create();
+    $season = Season::factory()->create();
+
+    Livewire::actingAs($administrator)
+        ->test(SeasonIndex::class)
+        ->assertSee(route('seasons.edit', $season), false)
+        ->assertSee("confirmDelete('{$season->uuid}')", false)
+        ->assertSee("markAsCurrent('{$season->uuid}')", false)
+        ->assertDontSee("confirmDelete('{$season->id}')", false)
+        ->assertDontSee("markAsCurrent({$season->id})", false);
+
+    $this->actingAs($administrator)
+        ->get(route('seasons.edit', $season->id))
+        ->assertNotFound();
+});
+
+test('a team is listed and edited by its uuid', function () {
+    $administrator = User::factory()->administrator()->create();
+    $team = Team::factory()->create();
+
+    Livewire::actingAs($administrator)
+        ->test(TeamIndex::class)
+        ->assertSee(route('teams.edit', $team), false)
+        ->assertSee("confirmDelete('{$team->uuid}')", false)
+        ->assertDontSee("confirmDelete('{$team->id}')", false);
+
+    $this->actingAs($administrator)
+        ->get(route('teams.edit', $team->id))
+        ->assertNotFound();
+});
+
+test('players index filters by season and team', function () {
+    $administrator = User::factory()->administrator()->create();
+    $pastSeason = Season::factory()->create(['is_current' => false, 'name' => '2023/2024']);
+    $currentSeason = Season::factory()->current()->create(['name' => '2024/2025']);
+    $pastTeam = Team::factory()->create(['season_id' => $pastSeason->id]);
+    $currentTeamA = Team::factory()->create(['season_id' => $currentSeason->id]);
+    $currentTeamB = Team::factory()->create(['season_id' => $currentSeason->id]);
+    Player::factory()->create(['team_id' => $pastTeam->id, 'name' => 'Past Player']);
+    Player::factory()->create(['team_id' => $currentTeamA->id, 'name' => 'Team A Player']);
+    Player::factory()->create(['team_id' => $currentTeamB->id, 'name' => 'Team B Player']);
+
+    Livewire::actingAs($administrator)
+        ->test(PlayerIndex::class)
+        ->assertSee('Team A Player')
+        ->assertSee('Team B Player')
+        ->assertDontSee('Past Player');
+
+    Livewire::actingAs($administrator)
+        ->test(PlayerIndex::class)
+        ->set('seasonId', (string) $pastSeason->id)
+        ->assertSee('Past Player')
+        ->assertDontSee('Team A Player');
+
+    Livewire::actingAs($administrator)
+        ->test(PlayerIndex::class)
+        ->set('seasonId', (string) $currentSeason->id)
+        ->set('teamId', (string) $currentTeamA->id)
+        ->assertSee('Team A Player')
+        ->assertDontSee('Team B Player')
+        ->assertDontSee('Past Player');
+});
+
+test('a player is listed and edited by its uuid', function () {
+    $administrator = User::factory()->administrator()->create();
+    $player = Player::factory()->create();
+
+    Livewire::actingAs($administrator)
+        ->test(PlayerIndex::class)
+        ->assertSee(route('players.edit', $player), false)
+        ->assertSee("confirmDelete('{$player->uuid}')", false)
+        ->assertDontSee("confirmDelete('{$player->id}')", false);
+
+    $this->actingAs($administrator)
+        ->get(route('players.edit', $player->id))
+        ->assertNotFound();
 });
 
 test('a club role cannot create a player on another club team', function () {

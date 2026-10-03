@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasPublicUuid;
 use Carbon\CarbonImmutable;
 use Database\Factories\PlayerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -9,11 +10,13 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
  * @property int $id
+ * @property string $uuid
  * @property int $team_id
  * @property string|null $fpb_id
  * @property string $name
@@ -33,7 +36,7 @@ use Illuminate\Support\Str;
 class Player extends Model
 {
     /** @use HasFactory<PlayerFactory> */
-    use HasFactory;
+    use HasFactory, HasPublicUuid;
 
     /**
      * @return array<string, string>
@@ -54,6 +57,51 @@ class Player extends Model
     public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class);
+    }
+
+    /**
+     * @return HasMany<GameEvent, $this>
+     */
+    public function events(): HasMany
+    {
+        return $this->hasMany(GameEvent::class);
+    }
+
+    public function shortName(): string
+    {
+        $parts = preg_split('/\s+/', trim($this->name)) ?: [];
+        $parts = array_values(array_filter(
+            $parts,
+            fn (string $part): bool => $part !== '',
+        ));
+
+        if (count($parts) < 2) {
+            return $this->name;
+        }
+
+        $last = (string) array_pop($parts);
+
+        return $parts[0].' '.mb_substr($last, 0, 1).'.';
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function nameLines(): array
+    {
+        $parts = preg_split('/\s+/', trim($this->name)) ?: [];
+        $parts = array_values(array_filter(
+            $parts,
+            fn (string $part): bool => $part !== '',
+        ));
+
+        if (count($parts) < 2) {
+            return [$this->name];
+        }
+
+        $last = array_pop($parts);
+
+        return [implode(' ', $parts), (string) $last];
     }
 
     public static function slugFromName(string $name): string

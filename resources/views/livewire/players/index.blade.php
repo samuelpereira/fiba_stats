@@ -4,6 +4,26 @@
     :action-href="route('players.create')"
     :action-label="__('New player')"
 >
+    <div class="border-b border-zinc-200 px-4 py-4">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end">
+            <flux:select wire:model.live="seasonId" :label="__('Season')" class="sm:max-w-xs">
+                <flux:select.option value="">{{ __('All seasons') }}</flux:select.option>
+                @foreach ($this->seasons as $season)
+                    <flux:select.option :value="$season->id">{{ $season->name }}</flux:select.option>
+                @endforeach
+            </flux:select>
+
+            <flux:select wire:model.live="teamId" :label="__('Team')" class="sm:max-w-md">
+                <flux:select.option value="">{{ __('All teams') }}</flux:select.option>
+                @foreach ($this->teamsForFilter as $team)
+                    <flux:select.option :value="$team->id">
+                        {{ $team->name }} — {{ $team->club->name }}
+                    </flux:select.option>
+                @endforeach
+            </flux:select>
+        </div>
+    </div>
+
     <table class="w-full text-sm">
         <thead>
             <tr class="border-b border-zinc-200 text-left text-xs font-medium tracking-wide text-zinc-500 uppercase">
@@ -16,7 +36,7 @@
         </thead>
         <tbody>
             @forelse ($this->players as $player)
-                <tr wire:key="player-{{ $player->id }}" class="border-b border-zinc-100 last:border-b-0">
+                <tr wire:key="player-{{ $player->uuid }}" class="border-b border-zinc-100 last:border-b-0">
                     <td class="px-4 py-4 font-semibold">{{ $player->name }}</td>
                     <td class="px-4 py-4 text-zinc-600">{{ $player->number }}</td>
                     <td class="px-4 py-4 text-zinc-600">{{ $player->team->name }}</td>
@@ -26,7 +46,7 @@
                     <td class="px-4 py-4">
                         <x-listing.actions :edit-href="route('players.edit', $player)">
                             <x-slot:delete>
-                                <x-listing.delete-button :record-id="$player->id" />
+                                <x-listing.delete-button :record-id="$player->uuid" />
                             </x-slot:delete>
                         </x-listing.actions>
                     </td>

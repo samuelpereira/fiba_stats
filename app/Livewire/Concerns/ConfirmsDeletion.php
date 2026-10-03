@@ -9,11 +9,11 @@ use Livewire\Attributes\Computed;
 
 trait ConfirmsDeletion
 {
-    public ?int $recordIdToDelete = null;
+    public int|string|null $recordIdToDelete = null;
 
     abstract protected function deletionModalName(): string;
 
-    abstract protected function recordForDeletion(int $id): Model;
+    abstract protected function recordForDeletion(int|string $key): Model;
 
     abstract protected function performDeletion(Model $record): void;
 
@@ -21,13 +21,15 @@ trait ConfirmsDeletion
 
     abstract protected function clearListedRecords(): void;
 
-    public function confirmDelete(int $id): void
+    public function confirmDelete(int|string $key): void
     {
-        $record = $this->recordForDeletion($id);
+        $record = $this->recordForDeletion($key);
 
         $this->authorizeDeletion($record);
 
-        $this->recordIdToDelete = (int) $record->getKey();
+        $routeKey = $record->getRouteKey();
+
+        $this->recordIdToDelete = is_int($routeKey) ? $routeKey : (string) $routeKey;
 
         Flux::modal($this->deletionModalName())->show();
     }

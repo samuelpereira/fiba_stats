@@ -15,6 +15,9 @@ use App\Livewire\Players\Index as PlayerIndex;
 use App\Livewire\Seasons\Create as CreateSeason;
 use App\Livewire\Seasons\Edit as EditSeason;
 use App\Livewire\Seasons\Index as SeasonIndex;
+use App\Livewire\Statistics\Index as StatisticsIndex;
+use App\Livewire\Statistics\Record as StatisticsRecord;
+use App\Livewire\Statistics\Show;
 use App\Livewire\Teams\Create as CreateTeam;
 use App\Livewire\Teams\Edit as EditTeam;
 use App\Livewire\Teams\Index as TeamIndex;
@@ -57,6 +60,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire('games', GameIndex::class)->name('games.index')->can('viewAny', Game::class);
     Route::livewire('games/create', CreateGame::class)->name('games.create')->can('create', Game::class);
     Route::livewire('games/{game}/edit', EditGame::class)->name('games.edit')->can('update', 'game');
+
+    Route::livewire('statistics', StatisticsIndex::class)->name('statistics.index')->can('collectAny', Game::class);
+    Route::livewire('statistics/{game}/box', Show::class)->name('statistics.show')->can('collect', 'game');
+    Route::livewire('statistics/{game}', StatisticsRecord::class)->name('statistics.record')->can('collect', 'game');
 
     Route::livewire('users', UserIndex::class)->name('users.index')->can('viewAny', User::class);
     Route::livewire('users/create', CreateUser::class)->name('users.create')->can('create', User::class);

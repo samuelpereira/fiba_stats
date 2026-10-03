@@ -2,6 +2,7 @@
 
 use App\Enums\GameStatus;
 use App\Enums\HomeAway;
+use App\Enums\TeamColor;
 use App\Livewire\Games\Create as CreateGame;
 use App\Livewire\Games\Edit as EditGame;
 use App\Livewire\Games\Index as GameIndex;
@@ -40,6 +41,7 @@ test('a club role creates a game for its own team', function () {
     $game = Game::query()->where('opponent', 'Benfica')->first();
 
     expect($game)->not->toBeNull()
+        ->and($game->uuid)->toBeUuid()
         ->and($game->team_id)->toBe($team->id)
         ->and($game->fpb_id)->toBe('FPB-1')
         ->and($game->date_time->format('Y-m-d H:i'))->toBe('2026-10-04 18:30')
@@ -50,6 +52,36 @@ test('a club role creates a game for its own team', function () {
         ->and($game->home_points)->toBeNull()
         ->and($game->away_points)->toBeNull()
         ->and($game->status)->toBe(GameStatus::Scheduled);
+});
+
+test('a new game stores the configured period lengths and team colors', function () {
+    config([
+        'game.quarter_minutes' => 12,
+        'game.overtime_minutes' => 4,
+        'game.home_color' => TeamColor::Red->value,
+        'game.away_color' => TeamColor::Green->value,
+    ]);
+
+    $club = Club::factory()->create();
+    $access = User::factory()->clubAccessFor($club)->create();
+    $team = Team::factory()->create(['club_id' => $club->id]);
+
+    Livewire::actingAs($access)
+        ->test(CreateGame::class)
+        ->set('teamId', (string) $team->id)
+        ->set('opponent', 'Sporting')
+        ->set('dateTime', '2026-10-04T18:30')
+        ->set('homeAway', HomeAway::Home->value)
+        ->set('status', GameStatus::Scheduled->value)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $game = Game::query()->where('opponent', 'Sporting')->firstOrFail();
+
+    expect($game->quarter_minutes)->toBe(12)
+        ->and($game->overtime_minutes)->toBe(4)
+        ->and($game->home_color)->toBe(TeamColor::Red)
+        ->and($game->away_color)->toBe(TeamColor::Green);
 });
 
 test('a club role cannot create a game for another club team', function () {
@@ -139,10 +171,25 @@ test('an administrator can delete a game', function () {
 
     Livewire::actingAs($administrator)
         ->test(GameIndex::class)
-        ->call('confirmDelete', $game->id)
+        ->call('confirmDelete', $game->uuid)
         ->call('deleteConfirmed');
 
     expect(Game::query()->find($game->id))->toBeNull();
+});
+
+test('a game is listed and edited by its uuid', function () {
+    $administrator = User::factory()->administrator()->create();
+    $game = Game::factory()->create();
+
+    Livewire::actingAs($administrator)
+        ->test(GameIndex::class)
+        ->assertSee(route('games.edit', $game), false)
+        ->assertSee("confirmDelete('{$game->uuid}')", false)
+        ->assertDontSee("confirmDelete('{$game->id}')", false);
+
+    $this->actingAs($administrator)
+        ->get(route('games.edit', $game->id))
+        ->assertNotFound();
 });
 
 test('an administrator cannot delete a team that still has games', function () {
@@ -151,7 +198,7 @@ test('an administrator cannot delete a team that still has games', function () {
 
     Livewire::actingAs($administrator)
         ->test(TeamIndex::class)
-        ->call('confirmDelete', $game->team_id)
+        ->call('confirmDelete', $game->team->uuid)
         ->call('deleteConfirmed');
 
     expect(Team::query()->find($game->team_id))->not->toBeNull();
