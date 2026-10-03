@@ -24,7 +24,7 @@
                 @if ($editingClock)
                     <label>
                         <span class="sr-only">{{ __('Clock') }}</span>
-                        <input wire:model="clock" x-init="if ($el.offsetParent !== null) $el.focus()" @change="$store.gameClock.setFrom($event.target.value); $wire.$set('editingClock', false)" type="text" inputmode="numeric" maxlength="5" class="w-20 rounded-md border border-zinc-900 bg-white px-1 py-1 text-center text-3xl font-semibold tabular-nums lg:w-24 lg:px-2 lg:text-4xl" />
+                        <input wire:model="clock" x-init="if ($el.offsetParent !== null) $el.focus()" @change="$store.gameClock.setFrom($event.target.value); $wire.$set('editingClock', false)" type="text" inputmode="numeric" maxlength="5" class="w-20 rounded-md border border-zinc-900 bg-white px-1 py-1 text-center text-3xl font-semibold tabular-nums text-zinc-900 lg:w-24 lg:px-2 lg:text-4xl" />
                     </label>
                 @else
                     <button type="button" @click="if (! $store.gameClock.running && ! $wire.awaitingQuarterStart) $wire.$set('editingClock', true)" class="text-3xl font-bold tracking-tight tabular-nums lg:text-4xl" aria-label="{{ __('Edit clock') }}">
