@@ -19,14 +19,11 @@
                 <td class="px-2 py-2 tabular-nums text-zinc-500" @style(['box-shadow: inset 4px 0 0 '.$homeColor => $line['side'] === 'home'])>{{ $line['clock'] }}</td>
                 <td class="px-2 py-2">
                     @if ($line['playerLines'] !== [])
-                        <p class="truncate">
+                        <div class="leading-tight">
                             @foreach ($line['playerLines'] as $playerLine)
-                                @if (! $loop->first)
-                                    <span class="text-zinc-400"> - </span>
-                                @endif
-                                <span @class(['text-green-700' => $playerLine['enters'], 'text-red-700' => ! $playerLine['enters']])>{{ $playerLine['name'] }}</span>
+                                <p @class(['truncate font-medium', 'text-red-700' => ! $playerLine['enters'], 'text-green-700' => $playerLine['enters']])>{{ $playerLine['name'] }}</p>
                             @endforeach
-                        </p>
+                        </div>
                     @else
                         <p class="truncate">{{ $line['player'] }}</p>
                     @endif
