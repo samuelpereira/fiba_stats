@@ -1149,8 +1149,8 @@ class Record extends Component
 
             if ($event->type === StatType::Substitution && $event->player instanceof Player && $event->outgoingPlayer instanceof Player) {
                 $playerLines = [
-                    ['enters' => false, 'name' => $this->loggedPlayer($event->outgoingPlayer)],
                     ['enters' => true, 'name' => $this->loggedPlayer($event->player)],
+                    ['enters' => false, 'name' => $this->loggedPlayer($event->outgoingPlayer)],
                 ];
             }
 
@@ -1376,7 +1376,7 @@ class Record extends Component
     {
         $number = $player->number === null ? '' : '#'.$player->number.' ';
 
-        return trim($number.$player->shortName());
+        return trim($number.$player->name);
     }
 
     /**

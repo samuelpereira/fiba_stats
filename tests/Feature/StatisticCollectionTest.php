@@ -1544,8 +1544,8 @@ test('each player who enters and leaves is written on the log', function () {
     $events = GameEvent::query()->where('type', StatType::Substitution)->with(['player', 'outgoingPlayer'])->orderBy('id')->get();
 
     foreach ($events as $event) {
-        $screen->assertSee('#'.$event->player->number.' '.$event->player->shortName())
-            ->assertSee('#'.$event->outgoingPlayer->number.' '.$event->outgoingPlayer->shortName());
+        $screen->assertSee('#'.$event->player->number.' '.$event->player->name)
+            ->assertSee('#'.$event->outgoingPlayer->number.' '.$event->outgoingPlayer->name);
     }
 
     expect($screen->html())->toMatch('/text-green-700[^>]*>#'.$events->first()->player->number.'/')

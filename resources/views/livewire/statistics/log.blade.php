@@ -17,7 +17,7 @@
                 @if ($line['editable']) wire:click="editAction({{ $line['id'] }})" @endif
             >
                 <td class="px-2 py-2 tabular-nums text-zinc-500" @style(['box-shadow: inset 4px 0 0 '.$homeColor => $line['side'] === 'home'])>{{ $line['clock'] }}</td>
-                <td class="px-2 py-2">
+                <td class="max-w-0 px-2 py-2">
                     @if ($line['playerLines'] !== [])
                         <div class="leading-tight">
                             @foreach ($line['playerLines'] as $playerLine)
