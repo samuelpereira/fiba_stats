@@ -64,7 +64,13 @@ class FpbGamesImporter
 
             $attributes = [
                 'opponent' => $isHome ? $fixture['away'] : $fixture['home'],
-                'date_time' => $this->resolveFixtureDateTime($fixture, $exists ? $game->date_time : null),
+                'date_time' => $this->resolveFixtureDateTime(
+                    $fixture['year'],
+                    $fixture['month'],
+                    $fixture['day'],
+                    $fixture['time'],
+                    $exists ? $game->date_time : null,
+                ),
                 'place' => $fixture['loc'],
                 'home_away' => $isHome ? HomeAway::Home : HomeAway::Away,
                 'competition' => $fixture['comp'],
@@ -224,7 +230,7 @@ class FpbGamesImporter
     }
 
     /**
-     * @param  array<int, array<string, mixed>>  $fixtures
+     * @param  list<array{home: string, away: string}>  $fixtures
      */
     public function detectClub(array $fixtures): string
     {
@@ -255,7 +261,20 @@ class FpbGamesImporter
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return list<array{
+     *     id: string,
+     *     year: int,
+     *     month: int,
+     *     day: int,
+     *     home: string,
+     *     away: string,
+     *     loc: string|null,
+     *     comp: string|null,
+     *     pc: int|null,
+     *     pf: int|null,
+     *     time: string|null,
+     *     date_time: CarbonImmutable,
+     * }>
      */
     public function parse(string $html): array
     {
@@ -341,24 +360,30 @@ class FpbGamesImporter
             }
         }
 
-        return array_map(function (array $game): array {
-            $game['date_time'] = $this->resolveFixtureDateTime($game, null);
+        /** @var list<array{id: string, year: int, month: int, day: int, home: string, away: string, loc: string|null, comp: string|null, pc: int|null, pf: int|null, time: string|null, date_time: CarbonImmutable}> $fixtures */
+        $fixtures = array_map(function (array $game): array {
+            $game['date_time'] = $this->resolveFixtureDateTime(
+                $game['year'],
+                $game['month'],
+                $game['day'],
+                $game['time'],
+                null,
+            );
 
             return $game;
         }, array_values($games));
+
+        return $fixtures;
     }
 
-    /**
-     * @param  array{year: int, month: int, day: int, time: string|null}  $fixture
-     */
-    protected function resolveFixtureDateTime(array $fixture, ?CarbonImmutable $existing): CarbonImmutable
+    protected function resolveFixtureDateTime(int $year, int $month, int $day, ?string $time, ?CarbonImmutable $existing): CarbonImmutable
     {
-        $date = CarbonImmutable::create($fixture['year'], $fixture['month'], $fixture['day']);
+        $date = CarbonImmutable::create($year, $month, $day);
 
-        if ($fixture['time'] !== null) {
+        if ($time !== null) {
             return $date->setTime(
-                (int) substr($fixture['time'], 0, 2),
-                (int) substr($fixture['time'], 3, 2),
+                (int) substr($time, 0, 2),
+                (int) substr($time, 3, 2),
             );
         }
 

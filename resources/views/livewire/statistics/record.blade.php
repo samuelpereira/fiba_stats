@@ -347,7 +347,7 @@
     </div>
 </div>
 
-<div wire:key="stat-pad-desktop" class="hidden h-dvh overflow-hidden bg-zinc-100 text-zinc-900 lg:grid lg:grid-cols-[minmax(0,0.6fr)_minmax(0,1.2fr)_minmax(0,1.1fr)]">
+<div wire:key="stat-pad-desktop" class="hidden h-dvh overflow-hidden bg-zinc-100 text-zinc-900 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)]">
     <section class="flex min-h-0 flex-col border-r border-zinc-200 p-2">
         <div class="grid h-4/5 min-h-0 grid-cols-2 grid-rows-7 gap-2">
         @foreach ([

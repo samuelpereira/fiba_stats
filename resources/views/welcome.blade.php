@@ -31,7 +31,7 @@
                 <div class="flex flex-col items-center gap-4">
                     <span class="flex size-14 items-center justify-center rounded-2xl bg-white shadow-xs ring-1 ring-zinc-200">
                         <x-app-logo-icon class="size-9 fill-current text-zinc-900" />
-                    </span>
+                                </span>
                     <div class="space-y-2">
                         <h1 class="text-2xl font-semibold tracking-tight text-zinc-900">
                             {{ config('app.name') }}
@@ -63,7 +63,7 @@
                             <p class="text-xs text-zinc-500">
                                 {{ __('Sign in with your club account to continue.') }}
                             </p>
-                        </div>
+                </div>
                     @endif
                 @endauth
             </main>
