@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\GameStatus;
 use App\Enums\HomeAway;
 use App\Enums\StatType;
 use App\Livewire\Statistics\Show as StatisticsShow;
@@ -119,7 +120,7 @@ test('the statistics button opens the game box score', function () {
         ->assertDontSee(__('Turn the screen sideways'))
         ->assertSee('ADC 2 vs Metro United 3', false)
         ->assertDontSee('ADC 2 vs Metro United 3 - ', false)
-        ->assertSeeInOrder(['Matchup', 'Box score'])
+        ->assertSeeInOrder(['Box score', 'Matchup'])
         ->assertSee('/storage/opponents/crest.png', false);
 
     $this->actingAs($member)
@@ -269,6 +270,24 @@ test('the mobile shot chart starts on the club team', function () {
     Livewire::actingAs($member)
         ->test(StatisticsShow::class, ['game' => $home])
         ->assertSet('mobileShotChartFilter', 'home|team');
+});
+
+test('a finished game hides the court and bench cards', function () {
+    $club = Club::factory()->create();
+    $team = Team::factory()->create(['club_id' => $club->id]);
+    $member = User::factory()->memberOf($club)->withTeams($team)->create();
+    $game = Game::factory()->create([
+        'team_id' => $team->id,
+        'status' => GameStatus::Played,
+    ]);
+    $player = Player::factory()->create(['team_id' => $team->id]);
+    $game->players()->attach($player->id, ['starter' => true]);
+
+    Livewire::actingAs($member)
+        ->test(StatisticsShow::class, ['game' => $game])
+        ->assertDontSee('On court')
+        ->assertDontSee('Bench')
+        ->assertSee('Box score');
 });
 
 test('a club cannot open another clubs game statistics', function () {

@@ -123,7 +123,7 @@
             </div>
         </div>
 
-        @unless ($shared)
+        @unless ($shared || $this->game->status === \App\Enums\GameStatus::Played)
             <div class="mt-4 grid gap-4 sm:grid-cols-2">
                 <div class="overflow-x-auto rounded-lg border border-zinc-200 bg-white shadow-sm">
                     <table class="w-full text-xs">
@@ -186,27 +186,14 @@
             </div>
         @endunless
 
-        @unless ($shared)
-            @include('livewire.statistics.partials.matchup')
-        @endunless
-
         <div class="mt-4 rounded-lg border border-zinc-200 bg-white shadow-sm">
             <div class="border-b border-zinc-200 px-4 py-3 sm:px-6">
                 <h2 class="text-base font-semibold">{{ __('Box score') }}</h2>
             </div>
-            @unless ($shared)
-                @include('livewire.statistics.partials.box-score-mobile', [
-                    'players' => $boxScore['players'],
-                    'teamLine' => $boxScore['team'],
-                    'teamName' => $teamName,
-                    'opponentLine' => $boxScore['opponent'],
-                    'opponentName' => $opponentName,
-                ])
-            @endunless
-            <div @class(['overflow-x-auto', 'hidden sm:block' => ! $shared])>
-            <table class="w-full text-left text-xs">
+            <div class="overflow-x-auto">
+            <table class="box-score-table w-full text-left text-xs">
                 <thead>
-                    <tr class="border-b border-zinc-200 text-xs font-medium tracking-wide text-zinc-500 uppercase">
+                    <tr class="text-xs font-medium tracking-wide text-zinc-500 uppercase">
                         <th class="w-44 whitespace-nowrap py-2 pr-3 pl-4 font-medium sm:pl-6">{{ __('Player') }}</th>
                         <th class="px-2 py-2 text-right font-medium">{{ __('Pts') }}</th>
                         <th class="min-w-14 whitespace-nowrap px-2 py-2 text-right font-medium">{{ __('2P') }}</th>
@@ -229,7 +216,7 @@
                 </thead>
                 <tbody>
                     @foreach ($boxScore['players'] as $player)
-                        <tr wire:key="box-{{ $player['id'] }}" class="border-b border-zinc-100">
+                        <tr wire:key="box-{{ $player['id'] }}">
                             <td class="w-44 whitespace-nowrap py-2 pr-3 pl-4 sm:pl-6">
                                 <span class="font-medium tabular-nums">{{ $player['number'] ?? '—' }}</span>
                                 <span class="ml-2">{{ $player['name'] }}</span>
@@ -253,7 +240,7 @@
                             <td class="px-2 py-2 text-center tabular-nums">{{ $player['minutes'] }}</td>
                         </tr>
                     @endforeach
-                    <tr class="border-b border-zinc-200 font-semibold">
+                    <tr class="font-semibold">
                         <td class="w-44 whitespace-nowrap py-2 pr-3 pl-4 sm:pl-6">{{ $teamName }}</td>
                         <td class="min-w-14 whitespace-nowrap px-2 py-2 text-right tabular-nums">{{ $boxScore['team']['points'] }}</td>
                         <td class="min-w-14 whitespace-nowrap px-2 py-2 text-right tabular-nums">{{ $boxScore['team']['twoMade'] }}-{{ $boxScore['team']['twoAttempts'] }}</td>
@@ -298,9 +285,7 @@
             </div>
         </div>
 
-        @if ($shared)
-            @include('livewire.statistics.partials.matchup')
-        @endif
+        @include('livewire.statistics.partials.matchup')
 
         @if (count($shotChartsByPeriod) > 0)
             <div class="mt-4 rounded-lg border border-zinc-200 bg-white px-4 py-4 shadow-sm sm:px-6">
