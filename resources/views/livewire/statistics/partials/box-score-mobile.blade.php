@@ -19,6 +19,7 @@
         ['label' => __('STL'), 'value' => $line['steals']],
         ['label' => __('BLK'), 'value' => $line['blocks']],
         ['label' => __('TO'), 'value' => $line['turnovers']],
+        ['label' => __('+/-'), 'value' => is_int($line['plusMinus'] ?? null) ? ($line['plusMinus'] > 0 ? '+'.$line['plusMinus'] : $line['plusMinus']) : '—'],
         ['label' => __('PF'), 'value' => $line['fouls']],
     ];
 @endphp

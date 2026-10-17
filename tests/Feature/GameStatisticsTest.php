@@ -169,6 +169,108 @@ test('the statistics button opens the game box score', function () {
         ->assertSet('backUrl', route('statistics.index'));
 });
 
+test('plus minus counts the margin only while that player is on the court', function () {
+    $club = Club::factory()->create();
+    $team = Team::factory()->create(['club_id' => $club->id]);
+    $member = User::factory()->memberOf($club)->withTeams($team)->create();
+    $game = Game::factory()->create([
+        'team_id' => $team->id,
+        'home_away' => HomeAway::Away,
+    ]);
+    $stayer = Player::factory()->create(['team_id' => $team->id, 'name' => 'Nia Costa', 'number' => 4]);
+    $outgoing = Player::factory()->create(['team_id' => $team->id, 'name' => 'Alex Reed', 'number' => 7]);
+    $incoming = Player::factory()->create(['team_id' => $team->id, 'name' => 'Casey Dunn', 'number' => 11]);
+    $unused = Player::factory()->create(['team_id' => $team->id, 'name' => 'Rui Melo', 'number' => 15]);
+
+    $game->players()->attach([
+        $stayer->id => ['starter' => true],
+        $outgoing->id => ['starter' => true],
+        $incoming->id => ['starter' => false],
+        $unused->id => ['starter' => false],
+    ]);
+
+    GameEvent::factory()->create([
+        'game_id' => $game->id,
+        'player_id' => null,
+        'home_away' => null,
+        'type' => StatType::QuarterStarted,
+        'quarter' => 1,
+        'clock' => '10:00',
+    ]);
+    GameEvent::factory()->create([
+        'game_id' => $game->id,
+        'player_id' => $outgoing->id,
+        'home_away' => HomeAway::Away,
+        'type' => StatType::TwoPointMade,
+        'quarter' => 1,
+        'clock' => '09:00',
+    ]);
+    GameEvent::factory()->create([
+        'game_id' => $game->id,
+        'player_id' => null,
+        'home_away' => HomeAway::Home,
+        'type' => StatType::FreeThrowMade,
+        'quarter' => 1,
+        'clock' => '08:30',
+    ]);
+    GameEvent::factory()->create([
+        'game_id' => $game->id,
+        'player_id' => $incoming->id,
+        'outgoing_player_id' => $outgoing->id,
+        'home_away' => HomeAway::Away,
+        'type' => StatType::Substitution,
+        'quarter' => 1,
+        'clock' => '08:00',
+    ]);
+    GameEvent::factory()->create([
+        'game_id' => $game->id,
+        'player_id' => null,
+        'home_away' => HomeAway::Home,
+        'type' => StatType::ThreePointMade,
+        'quarter' => 1,
+        'clock' => '07:00',
+    ]);
+
+    $plusMinus = collect($game->boxScore()['players'])->pluck('plusMinus', 'name');
+
+    expect($plusMinus->get('Nia Costa'))->toBe(-2)
+        ->and($plusMinus->get('Alex Reed'))->toBe(1)
+        ->and($plusMinus->get('Casey Dunn'))->toBe(-3)
+        ->and($plusMinus->get('Rui Melo'))->toBe(0);
+
+    $this->actingAs($member)
+        ->get(route('statistics.show', $game))
+        ->assertOk()
+        ->assertSeeInOrder(['+/-', 'PF', 'Min'])
+        ->assertSee('+1')
+        ->assertSee('-2')
+        ->assertSee('-3');
+});
+
+test('the mobile shot chart starts on the club team', function () {
+    $club = Club::factory()->create();
+    $team = Team::factory()->create(['club_id' => $club->id, 'name' => 'North City']);
+    $member = User::factory()->memberOf($club)->withTeams($team)->create();
+    $away = Game::factory()->create([
+        'team_id' => $team->id,
+        'opponent' => 'South Valley',
+        'home_away' => HomeAway::Away,
+    ]);
+    $home = Game::factory()->create([
+        'team_id' => $team->id,
+        'opponent' => 'Metro United',
+        'home_away' => HomeAway::Home,
+    ]);
+
+    Livewire::actingAs($member)
+        ->test(StatisticsShow::class, ['game' => $away])
+        ->assertSet('mobileShotChartFilter', 'away|team');
+
+    Livewire::actingAs($member)
+        ->test(StatisticsShow::class, ['game' => $home])
+        ->assertSet('mobileShotChartFilter', 'home|team');
+});
+
 test('a club cannot open another clubs game statistics', function () {
     $game = Game::factory()->create();
     $account = User::factory()->clubAccessFor(Club::factory()->create())->create();

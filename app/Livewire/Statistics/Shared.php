@@ -15,5 +15,6 @@ class Shared extends Show
         $this->shared = true;
         $this->game = $game->loadMissing('team');
         $this->backUrl = '';
+        $this->mobileShotChartFilter = $this->defaultMobileShotChartFilter();
     }
 }

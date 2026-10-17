@@ -353,15 +353,47 @@ class Game extends Model
         $seconds = $lineup['seconds'];
 
         $lines = [];
+        $plusMinus = [];
+        $onCourt = [];
+
+        foreach ($this->players()->wherePivot('starter', true)->pluck('players.id') as $playerId) {
+            $onCourt[] = (int) $playerId;
+        }
 
         foreach ($players as $player) {
             $lines[$player->id] = $this->emptyBoxLine();
+            $plusMinus[$player->id] = 0;
         }
 
         $team = $this->emptyBoxLine();
         $opponent = $this->emptyBoxLine();
 
         foreach ($events as $event) {
+            if ($event->type === StatType::Substitution && $event->player_id !== null && $event->outgoing_player_id !== null) {
+                $outgoingId = (int) $event->outgoing_player_id;
+                $onCourt = array_values(array_filter(
+                    $onCourt,
+                    fn (int $playerId): bool => $playerId !== $outgoingId,
+                ));
+                $incomingId = (int) $event->player_id;
+
+                if (! in_array($incomingId, $onCourt, true)) {
+                    $onCourt[] = $incomingId;
+                }
+            }
+
+            $scored = $event->type->points();
+
+            if ($scored > 0 && $event->home_away !== null) {
+                $margin = $this->isOurSide($event->home_away) ? $scored : -$scored;
+
+                foreach ($onCourt as $playerId) {
+                    if (array_key_exists($playerId, $plusMinus)) {
+                        $plusMinus[$playerId] += $margin;
+                    }
+                }
+            }
+
             if ($event->home_away === null || $event->type->isPeriod() || $event->type === StatType::Substitution || $event->type === StatType::Timeout) {
                 continue;
             }
@@ -390,6 +422,7 @@ class Game extends Model
                 'number' => $player->number,
                 'name' => $player->name,
                 'minutes' => self::formatPlayed($playerSeconds),
+                'plusMinus' => $plusMinus[$player->id] ?? 0,
                 ...$lines[$player->id],
             ];
         }

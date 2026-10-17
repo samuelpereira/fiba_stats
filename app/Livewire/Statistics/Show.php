@@ -36,6 +36,7 @@ class Show extends Component
 
         $this->game = $game->loadMissing('team');
         $this->backUrl = $this->resolveBackUrl(request()->query('from'));
+        $this->mobileShotChartFilter = $this->defaultMobileShotChartFilter();
     }
 
     public function resolveBackUrl(?string $from): string
@@ -170,6 +171,11 @@ class Show extends Component
         [$side] = explode('|', $this->mobileShotChartFilter, 2);
 
         return $side === 'away' ? 'away' : 'home';
+    }
+
+    protected function defaultMobileShotChartFilter(): string
+    {
+        return $this->game->home_away === HomeAway::Away ? 'away|team' : 'home|team';
     }
 
     private function guardShare(): void

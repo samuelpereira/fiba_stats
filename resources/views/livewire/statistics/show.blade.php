@@ -222,6 +222,7 @@
                         <th class="px-2 py-2 text-center font-medium">{{ __('BLK') }}</th>
                         <th class="px-2 py-2 text-center font-medium">{{ __('STL') }}</th>
                         <th class="px-2 py-2 text-center font-medium">{{ __('TO') }}</th>
+                        <th class="px-2 py-2 text-center font-medium">{{ __('+/-') }}</th>
                         <th class="px-2 py-2 text-center font-medium">{{ __('PF') }}</th>
                         <th class="px-2 py-2 text-center font-medium">{{ __('Min') }}</th>
                     </tr>
@@ -247,6 +248,7 @@
                             <td class="px-2 py-2 text-center tabular-nums">{{ $player['blocks'] }}</td>
                             <td class="px-2 py-2 text-center tabular-nums">{{ $player['steals'] }}</td>
                             <td class="px-2 py-2 text-center tabular-nums">{{ $player['turnovers'] }}</td>
+                            <td class="px-2 py-2 text-center tabular-nums">{{ $player['plusMinus'] > 0 ? '+'.$player['plusMinus'] : $player['plusMinus'] }}</td>
                             <td class="px-2 py-2 text-center tabular-nums">{{ $player['fouls'] }}</td>
                             <td class="px-2 py-2 text-center tabular-nums">{{ $player['minutes'] }}</td>
                         </tr>
@@ -267,6 +269,7 @@
                         <td class="px-2 py-2 text-center tabular-nums">{{ $boxScore['team']['blocks'] }}</td>
                         <td class="px-2 py-2 text-center tabular-nums">{{ $boxScore['team']['steals'] }}</td>
                         <td class="px-2 py-2 text-center tabular-nums">{{ $boxScore['team']['turnovers'] }}</td>
+                        <td class="px-2 py-2 text-center text-zinc-400">—</td>
                         <td class="px-2 py-2 text-center tabular-nums">{{ $boxScore['team']['fouls'] }}</td>
                         <td class="px-2 py-2 text-center text-zinc-400">—</td>
                     </tr>
@@ -286,6 +289,7 @@
                         <td class="px-2 py-2 text-center tabular-nums">{{ $boxScore['opponent']['blocks'] }}</td>
                         <td class="px-2 py-2 text-center tabular-nums">{{ $boxScore['opponent']['steals'] }}</td>
                         <td class="px-2 py-2 text-center tabular-nums">{{ $boxScore['opponent']['turnovers'] }}</td>
+                        <td class="px-2 py-2 text-center text-zinc-400">—</td>
                         <td class="px-2 py-2 text-center tabular-nums">{{ $boxScore['opponent']['fouls'] }}</td>
                         <td class="px-2 py-2 text-center text-zinc-400">—</td>
                     </tr>
