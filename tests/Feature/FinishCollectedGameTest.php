@@ -35,7 +35,7 @@ test('exit before the fourth quarter ends returns to the statistics list', funct
         ->assertSet('confirmingExit', true)
         ->call('confirmExit')
         ->assertSet('confirmingGameFinish', false)
-        ->assertRedirect(route('statistics.index'));
+        ->assertRedirect(route('dashboard'));
 });
 
 test('exit after the fourth quarter ends can finish the game and save the score', function () {
@@ -61,7 +61,7 @@ test('exit after the fourth quarter ends can finish the game and save the score'
         ->call('confirmExit')
         ->assertSet('confirmingGameFinish', true)
         ->call('finishGameAndExit')
-        ->assertRedirect(route('statistics.index'));
+        ->assertRedirect(route('dashboard'));
 
     $game->refresh();
 
@@ -92,7 +92,7 @@ test('exit after the fourth quarter ends can leave without finishing the game', 
         ->call('confirmExit')
         ->assertSet('confirmingGameFinish', true)
         ->call('leaveWithoutFinishing')
-        ->assertRedirect(route('statistics.index'));
+        ->assertRedirect(route('dashboard'));
 
     expect($game->refresh()->status)->toBe(GameStatus::Scheduled);
 });

@@ -634,7 +634,7 @@ class Record extends Component
             return;
         }
 
-        $this->redirect(route('statistics.index'), navigate: true);
+        $this->redirect(route('dashboard'), navigate: true);
     }
 
     public function leaveWithoutFinishing(): void
@@ -642,7 +642,7 @@ class Record extends Component
         $this->authorize('collect', $this->game);
 
         $this->confirmingGameFinish = false;
-        $this->redirect(route('statistics.index'), navigate: true);
+        $this->redirect(route('dashboard'), navigate: true);
     }
 
     public function finishGameAndExit(FinishCollectedGame $finishCollectedGame): void
@@ -651,7 +651,7 @@ class Record extends Component
 
         $finishCollectedGame->handle($this->actor(), $this->game->refresh());
         $this->confirmingGameFinish = false;
-        $this->redirect(route('statistics.index'), navigate: true);
+        $this->redirect(route('dashboard'), navigate: true);
     }
 
     public function askToEndQuarter(): void

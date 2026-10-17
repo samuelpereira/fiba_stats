@@ -2,9 +2,11 @@
 
 use App\Enums\GameStatus;
 use App\Enums\HomeAway;
+use App\Enums\StatType;
 use App\Livewire\Dashboard;
 use App\Models\Club;
 use App\Models\Game;
+use App\Models\GameEvent;
 use App\Models\Season;
 use App\Models\Team;
 use App\Models\User;
@@ -48,4 +50,36 @@ test('the dashboard shows season summaries and upcoming games for a club', funct
         ->assertSee(__('Upcoming games'))
         ->assertSee('1')
         ->assertSee(__('Teams'));
+});
+
+test('the dashboard recent games list only includes past games with a statistics log', function () {
+    $club = Club::factory()->create();
+    $access = User::factory()->clubAccessFor($club)->create();
+    $season = Season::factory()->current()->create();
+    $team = Team::factory()->create(['club_id' => $club->id, 'season_id' => $season->id]);
+
+    $logged = Game::factory()->create([
+        'team_id' => $team->id,
+        'opponent' => 'Logged Opponent',
+        'date_time' => now()->subDay(),
+    ]);
+
+    GameEvent::factory()->create([
+        'game_id' => $logged->id,
+        'type' => StatType::QuarterStarted,
+        'quarter' => 1,
+        'clock' => '10:00',
+    ]);
+
+    Game::factory()->create([
+        'team_id' => $team->id,
+        'opponent' => 'Empty Opponent',
+        'date_time' => now()->subDays(2),
+    ]);
+
+    Livewire::actingAs($access)
+        ->test(Dashboard::class)
+        ->assertSee(__('Recent games'))
+        ->assertSee('Logged Opponent')
+        ->assertDontSee('Empty Opponent');
 });

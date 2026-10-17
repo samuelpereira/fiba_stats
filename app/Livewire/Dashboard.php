@@ -112,6 +112,7 @@ class Dashboard extends Component
 
         return $this->gamesQuery()
             ->where('date_time', '<', now())
+            ->whereHas('events')
             ->orderByDesc('date_time')
             ->limit(5)
             ->get();

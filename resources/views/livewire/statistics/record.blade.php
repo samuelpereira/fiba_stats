@@ -616,7 +616,6 @@
     <div class="space-y-6 text-zinc-900">
         <div class="text-center">
             <h2 class="text-base font-semibold">{{ __('Leave game?') }}</h2>
-            <p class="mt-3 text-sm text-zinc-600">{{ __('Return to the statistics list?') }}</p>
         </div>
         <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
             <button type="button" wire:click="cancelConfirmingExit" class="w-full rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 sm:w-auto">{{ __('Cancel') }}</button>
