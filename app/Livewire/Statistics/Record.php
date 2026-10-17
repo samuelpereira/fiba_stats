@@ -82,6 +82,8 @@ class Record extends Component
 
     public bool $confirmingGameFinish = false;
 
+    public bool $confirmingExit = false;
+
     public bool $quarterEnded = false;
 
     public bool $awaitingQuarterStart = false;
@@ -611,6 +613,19 @@ class Record extends Component
     {
         $this->authorize('collect', $this->game);
 
+        $this->confirmingExit = true;
+    }
+
+    public function cancelConfirmingExit(): void
+    {
+        $this->confirmingExit = false;
+    }
+
+    public function confirmExit(): void
+    {
+        $this->authorize('collect', $this->game);
+
+        $this->confirmingExit = false;
         $this->game->refresh();
 
         if ($this->game->canFinishAfterFourthQuarter()) {

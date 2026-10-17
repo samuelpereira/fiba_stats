@@ -330,8 +330,8 @@
                 >{{ __('Game log') }}</button>
             </div>
             <div class="flex items-center justify-center gap-3 p-2">
-                <button type="button" wire:click="attemptExit" class="flex size-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 shadow-sm" aria-label="{{ __('Exit') }}">
-                    <flux:icon name="power" class="size-5" />
+                <button type="button" wire:click="attemptExit" class="flex size-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 shadow-sm" aria-label="{{ __('Back') }}">
+                    <flux:icon name="arrow-left" class="size-5" />
                 </button>
                 <a href="{{ route('statistics.show', ['game' => $this->game, 'from' => 'record']) }}" wire:navigate class="flex size-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 shadow-sm" aria-label="{{ __('Statistics') }}">
                     <flux:icon name="chart-bar" class="size-5" />
@@ -386,8 +386,8 @@
         @endforeach
         </div>
         <div class="flex min-h-0 flex-1 items-end justify-center gap-3">
-            <button type="button" wire:click="attemptExit" class="flex size-12 items-center justify-center rounded-xl bg-white text-zinc-700 shadow-sm" aria-label="{{ __('Exit') }}">
-                <flux:icon name="power" class="size-5" />
+            <button type="button" wire:click="attemptExit" class="flex size-12 items-center justify-center rounded-xl bg-white text-zinc-700 shadow-sm" aria-label="{{ __('Back') }}">
+                <flux:icon name="arrow-left" class="size-5" />
             </button>
             <a href="{{ route('statistics.show', ['game' => $this->game, 'from' => 'record']) }}" wire:navigate class="flex size-12 items-center justify-center rounded-xl bg-white text-zinc-700 shadow-sm" aria-label="{{ __('Statistics') }}">
                 <flux:icon name="chart-bar" class="size-5" />
@@ -435,12 +435,13 @@
 </div>
 @endif
 
-<flux:modal wire:model="choosingTimeout" :closable="false" class="statistics-collect-modal max-w-md !bg-white">
+<flux:modal wire:model="choosingTimeout" :closable="false" class="max-w-sm !bg-white">
     @php($timeoutAtHome = $this->game->home_away === \App\Enums\HomeAway::Home)
-    <div class="flex h-dvh min-h-0 flex-col text-zinc-900">
-        @include('livewire.statistics.partials.collect-modal-header', ['title' => __('Record timeout'), 'cancelAction' => 'cancelChoosingTimeout'])
-        <p class="px-4 text-center text-sm text-zinc-500">{{ __('Select which team called the timeout') }}</p>
-        <div class="flex-1 space-y-3 px-4 py-4">
+    <div class="space-y-4 text-zinc-900">
+        <div class="text-center">
+            <h2 class="text-base font-semibold">{{ __('Record timeout') }}</h2>
+            <p class="mt-2 text-sm text-zinc-500">{{ __('Select which team called the timeout') }}</p>
+        </div>
         <div class="space-y-3">
             <button type="button" wire:click="recordTimeout('home')" class="flex w-full items-center justify-between gap-3 rounded-lg border border-zinc-300 px-4 py-3 text-left hover:border-zinc-900">
                 <span class="min-w-0 truncate text-sm font-medium">{{ $timeoutAtHome ? $teamName : $opponentName }}</span>
@@ -450,6 +451,9 @@
                 <span class="min-w-0 truncate text-sm font-medium">{{ $timeoutAtHome ? $opponentName : $teamName }}</span>
                 <span class="shrink-0 text-xs text-zinc-500">{{ __('Away') }}</span>
             </button>
+        </div>
+        <div class="flex justify-end">
+            <button type="button" wire:click="cancelChoosingTimeout" class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800">{{ __('Cancel') }}</button>
         </div>
     </div>
 </flux:modal>
@@ -604,6 +608,19 @@
         </div>
         <div class="flex shrink-0 justify-end border-t border-zinc-200 px-3 py-3 sm:px-6">
             <button type="button" wire:click="endQuarter" class="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white">{{ __('Confirm') }}</button>
+        </div>
+    </div>
+</flux:modal>
+
+<flux:modal wire:model="confirmingExit" :closable="false" class="max-w-sm !bg-white">
+    <div class="space-y-6 text-zinc-900">
+        <div class="text-center">
+            <h2 class="text-base font-semibold">{{ __('Leave game?') }}</h2>
+            <p class="mt-3 text-sm text-zinc-600">{{ __('Return to the statistics list?') }}</p>
+        </div>
+        <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <button type="button" wire:click="cancelConfirmingExit" class="w-full rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 sm:w-auto">{{ __('Cancel') }}</button>
+            <button type="button" wire:click="confirmExit" class="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white sm:w-auto">{{ __('Leave') }}</button>
         </div>
     </div>
 </flux:modal>

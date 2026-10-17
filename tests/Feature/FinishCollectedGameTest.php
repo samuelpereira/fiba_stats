@@ -32,6 +32,8 @@ test('exit before the fourth quarter ends returns to the statistics list', funct
     Livewire::actingAs($member)
         ->test(StatisticsRecord::class, ['game' => $game])
         ->call('attemptExit')
+        ->assertSet('confirmingExit', true)
+        ->call('confirmExit')
         ->assertSet('confirmingGameFinish', false)
         ->assertRedirect(route('statistics.index'));
 });
@@ -55,6 +57,8 @@ test('exit after the fourth quarter ends can finish the game and save the score'
         ->set('clock', '00:00')
         ->call('endQuarter')
         ->call('attemptExit')
+        ->assertSet('confirmingExit', true)
+        ->call('confirmExit')
         ->assertSet('confirmingGameFinish', true)
         ->call('finishGameAndExit')
         ->assertRedirect(route('statistics.index'));
@@ -84,6 +88,8 @@ test('exit after the fourth quarter ends can leave without finishing the game', 
         ->set('clock', '00:00')
         ->call('endQuarter')
         ->call('attemptExit')
+        ->assertSet('confirmingExit', true)
+        ->call('confirmExit')
         ->assertSet('confirmingGameFinish', true)
         ->call('leaveWithoutFinishing')
         ->assertRedirect(route('statistics.index'));

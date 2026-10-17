@@ -66,24 +66,24 @@ test('stats cannot be recorded before the period starts', function () {
 test('a club member records a shot on the statistics log', function () {
     $club = Club::factory()->create();
     $member = User::factory()->memberOf($club)->create();
-    $team = Team::factory()->create(['club_id' => $club->id, 'name' => 'Ovarense']);
+    $team = Team::factory()->create(['club_id' => $club->id, 'name' => 'North City']);
     $game = Game::factory()->create([
         'team_id' => $team->id,
-        'opponent' => 'ADM S18M',
+        'opponent' => 'South Valley U18',
         'home_away' => HomeAway::Home,
         'away_points' => 54,
     ]);
     $player = Player::factory()->create([
         'team_id' => $team->id,
-        'name' => 'Goncalo Marques',
+        'name' => 'Alex North',
         'number' => 84,
     ]);
 
     giveStartingFive($game, $player);
 
     statisticsRecord($member, $game, false)
-        ->assertSee('Ovarense')
-        ->assertSee('ADM S18M')
+        ->assertSee('North City')
+        ->assertSee('South Valley U18')
         ->assertSee('54')
         ->set('quarter', 4)
         ->set('clock', '5:00')
@@ -93,7 +93,7 @@ test('a club member records a shot on the statistics log', function () {
         ->assertHasNoErrors()
         ->assertSee('Clock')
         ->assertSee('2pt')
-        ->assertSee('#84 Goncalo M.')
+        ->assertSee('#84 Alex North')
         ->assertSee('05:00')
         ->assertSee('2pts 1-1 fg')
         ->call('select', StatType::Steal->value)
@@ -203,17 +203,17 @@ test('a logged line can be given to another player or the opponent', function ()
     $team = Team::factory()->create(['club_id' => $club->id]);
     $game = Game::factory()->create([
         'team_id' => $team->id,
-        'opponent' => 'ADM S18M',
+        'opponent' => 'South Valley U18',
         'home_away' => HomeAway::Home,
     ]);
     $player = Player::factory()->create([
         'team_id' => $team->id,
-        'name' => 'Joao Miguel',
+        'name' => 'Jordan Lake',
         'number' => 23,
     ]);
     $replacement = Player::factory()->create([
         'team_id' => $team->id,
-        'name' => 'Duarte Sucena',
+        'name' => 'Casey Brooks',
         'number' => 24,
     ]);
 
@@ -231,7 +231,7 @@ test('a logged line can be given to another player or the opponent', function ()
     $screen->call('editAction', $event->id)
         ->call('selectEditingPlayer', $replacement->id)
         ->call('saveLogLine')
-        ->assertSee('#24 Duarte S.');
+        ->assertSee('#24 Casey Brooks');
 
     expect($event->refresh()->player_id)->toBe($replacement->id)
         ->and($event->home_away)->toBe(HomeAway::Home);
@@ -239,7 +239,7 @@ test('a logged line can be given to another player or the opponent', function ()
     $screen->call('editAction', $event->id)
         ->call('selectEditingOpponent')
         ->call('saveLogLine')
-        ->assertSee('ADM S18M');
+        ->assertSee('South Valley U18');
 
     expect($event->refresh()->player_id)->toBeNull()
         ->and($event->home_away)->toBe(HomeAway::Away);
@@ -325,13 +325,13 @@ test('a club member records an opponent basket from the player screen', function
     $team = Team::factory()->create(['club_id' => $club->id]);
     $game = Game::factory()->create([
         'team_id' => $team->id,
-        'opponent' => 'ADM S18M',
+        'opponent' => 'South Valley U18',
         'home_away' => HomeAway::Home,
         'away_points' => 54,
     ]);
     $player = Player::factory()->create([
         'team_id' => $team->id,
-        'name' => 'Goncalo Marques',
+        'name' => 'Alex North',
         'number' => 84,
     ]);
 
@@ -342,11 +342,11 @@ test('a club member records an opponent basket from the player screen', function
         ->assertSee('2-point basket')
         ->assertSee('Cancel')
         ->assertSee('#84')
-        ->assertSee('Goncalo')
-        ->assertSee('ADM S18M')
+        ->assertSee('Alex')
+        ->assertSee('South Valley U18')
         ->call('recordOpponent')
         ->assertSee('56')
-        ->assertSee('ADM S18M')
+        ->assertSee('South Valley U18')
         ->assertDontSee('2-point basket');
 
     $event = GameEvent::query()->where('type', StatType::TwoPointMade)->first();
@@ -360,15 +360,15 @@ test('a club member records an opponent basket from the player screen', function
 test('a recorded foul is shown beside the player', function () {
     $club = Club::factory()->create();
     $member = User::factory()->memberOf($club)->create();
-    $team = Team::factory()->create(['club_id' => $club->id, 'name' => 'Ovarense']);
+    $team = Team::factory()->create(['club_id' => $club->id, 'name' => 'North City']);
     $game = Game::factory()->create([
         'team_id' => $team->id,
-        'opponent' => 'ADM S18M',
+        'opponent' => 'South Valley U18',
         'home_away' => HomeAway::Home,
     ]);
     $player = Player::factory()->create([
         'team_id' => $team->id,
-        'name' => 'Goncalo Marques',
+        'name' => 'Alex North',
         'number' => 84,
     ]);
 
@@ -377,7 +377,7 @@ test('a recorded foul is shown beside the player', function () {
     statisticsRecord($member, $game)
         ->call('select', StatType::Foul->value)
         ->call('record', $player->id)
-        ->assertSee('Goncalo Marques')
+        ->assertSee('Alex North')
         ->assertSee('1 FP')
         ->assertSee('foul')
         ->assertSee('(1)');
@@ -557,7 +557,7 @@ test('a fifth team foul stays on the collector so a one can be marked', function
     $member = User::factory()->memberOf($club)->create();
     $game = Game::factory()->create([
         'team_id' => Team::factory()->create(['club_id' => $club->id])->id,
-        'opponent' => 'Gafanha',
+        'opponent' => 'South Valley',
     ]);
     $player = Player::factory()->create(['team_id' => $game->team_id]);
 
@@ -713,12 +713,12 @@ test('a user from another club cannot open the statistics log', function () {
 test('an administrator can collect statistics for any club', function () {
     $administrator = User::factory()->administrator()->create();
     $home = Game::factory()->create(['opponent' => 'Sporting']);
-    $away = Game::factory()->create(['opponent' => 'Benfica']);
+    $away = Game::factory()->create(['opponent' => 'Metro United']);
 
     Livewire::actingAs($administrator)
         ->test(StatisticsIndex::class)
         ->assertSee('Sporting')
-        ->assertSee('Benfica');
+        ->assertSee('Metro United');
 
     $this->actingAs($administrator)->get(route('statistics.record', $home))->assertOk();
     $this->actingAs($administrator)->get(route('statistics.record', $away))->assertOk();
@@ -732,12 +732,12 @@ test('a club can collect statistics for its own games', function () {
         'team_id' => $team->id,
         'opponent' => 'Sporting',
     ]);
-    Game::factory()->create(['opponent' => 'Benfica']);
+    Game::factory()->create(['opponent' => 'Metro United']);
 
     Livewire::actingAs($account)
         ->test(StatisticsIndex::class)
         ->assertSee('Sporting')
-        ->assertDontSee('Benfica');
+        ->assertDontSee('Metro United');
 
     $this->actingAs($account)->get(route('statistics.record', $game))->assertOk();
 });
@@ -796,8 +796,8 @@ test('a timeout is stored for the side that called it', function (HomeAway $home
     $club = Club::factory()->create();
     $member = User::factory()->memberOf($club)->create();
     $game = Game::factory()->create([
-        'team_id' => Team::factory()->create(['club_id' => $club->id, 'name' => 'Ovarense'])->id,
-        'opponent' => 'Gafanha',
+        'team_id' => Team::factory()->create(['club_id' => $club->id, 'name' => 'North City'])->id,
+        'opponent' => 'South Valley',
         'home_away' => $homeAway,
     ]);
 
@@ -823,9 +823,9 @@ test('a timeout is stored for the side that called it', function (HomeAway $home
         ->and($event->home_away)->toBe(HomeAway::from($side))
         ->and($event->player_id)->toBeNull();
 })->with([
-    'home side while we are home' => [HomeAway::Home, 'home', 'Ovarense'],
-    'away side while we are home' => [HomeAway::Home, 'away', 'Gafanha'],
-    'away side while we are away' => [HomeAway::Away, 'away', 'Ovarense'],
+    'home side while we are home' => [HomeAway::Home, 'home', 'North City'],
+    'away side while we are home' => [HomeAway::Home, 'away', 'South Valley'],
+    'away side while we are away' => [HomeAway::Away, 'away', 'North City'],
 ]);
 
 test('the foul line shows timeouts used in the current half or overtime', function () {
@@ -936,11 +936,11 @@ test('a stat opens the player picker in a modal over the pad', function () {
     $member = User::factory()->memberOf($club)->create();
     $game = Game::factory()->create([
         'team_id' => Team::factory()->create(['club_id' => $club->id])->id,
-        'opponent' => 'Benfica',
+        'opponent' => 'Metro United',
     ]);
     $player = Player::factory()->create([
         'team_id' => $game->team_id,
-        'name' => 'Joao Miguel',
+        'name' => 'Jordan Lake',
     ]);
 
     giveStartingFive($game, $player);
@@ -950,8 +950,8 @@ test('a stat opens the player picker in a modal over the pad', function () {
         ->assertSet('choosingPlayer', true)
         ->assertSee('2-point basket')
         ->assertSee('2P')
-        ->assertSee('Joao')
-        ->assertSee('Benfica')
+        ->assertSee('Jordan')
+        ->assertSee('Metro United')
         ->call('select', StatType::DefensiveRebound->value)
         ->assertSet('choosingPlayer', true)
         ->assertSee('Defensive Rebound')

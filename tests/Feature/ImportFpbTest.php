@@ -21,7 +21,7 @@ test('fpb roster import creates players and keeps disabled players disabled', fu
         'https://fpb.test/equipa' => Http::response(<<<'HTML'
 <div class="roster__player">
 <a href="/atletas/4242"></a>
-<h2 class="header__heading">Miguel Costa</h2>
+<h2 class="header__heading">Sample Athlete</h2>
 <div class="header_position">Base</div>
 <div class="header_jnumber">7</div>
 </div>
@@ -37,7 +37,7 @@ HTML),
     $player = Player::query()->where('fpb_id', '4242')->first();
 
     expect($player)->not->toBeNull()
-        ->and($player->name)->toBe('Miguel Costa')
+        ->and($player->name)->toBe('Sample Athlete')
         ->and($player->enabled)->toBeTrue();
 
     $player->update(['enabled' => false]);
@@ -52,8 +52,8 @@ test('fpb games import upserts fixtures for the club on the page', function () {
         'https://fpb.test/equipa' => Http::response(<<<'HTML'
 <h3 class="date">15 OUT 2025</h3>
 <a href="/ficha-de-jogo?internalID=1001">
-<span class="fullName">CA Gondomar</span>
-<span class="fullName">FC Porto</span>
+<span class="fullName">Test Club Alpha</span>
+<span class="fullName">Test Club Beta</span>
 <div class="results_text">80</div>
 <div class="results_text">70</div>
 </a>
@@ -61,7 +61,7 @@ HTML),
     ]);
 
     $team = Team::factory()->create([
-        'name' => 'CA Gondomar',
+        'name' => 'Test Club Alpha',
         'fpb_url' => 'https://fpb.test/equipa',
     ]);
 
@@ -73,7 +73,7 @@ HTML),
 
     expect($game)->not->toBeNull()
         ->and($game->team_id)->toBe($team->id)
-        ->and($game->opponent)->toBe('FC Porto')
+        ->and($game->opponent)->toBe('Test Club Beta')
         ->and($game->home_away)->toBe(HomeAway::Home)
         ->and($game->home_points)->toBe(80)
         ->and($game->away_points)->toBe(70)
@@ -85,8 +85,8 @@ test('fpb games re-import without kickoff time keeps existing date time', functi
         'https://fpb.test/equipa' => Http::response(<<<'HTML'
 <h3 class="date">15 OUT 2025</h3>
 <a href="/ficha-de-jogo?internalID=1001">
-<span class="fullName">CA Gondomar</span>
-<span class="fullName">FC Porto</span>
+<span class="fullName">Test Club Alpha</span>
+<span class="fullName">Test Club Beta</span>
 <div class="results_text">80</div>
 <div class="results_text">70</div>
 </a>
@@ -94,7 +94,7 @@ HTML),
     ]);
 
     $team = Team::factory()->create([
-        'name' => 'CA Gondomar',
+        'name' => 'Test Club Alpha',
         'fpb_url' => 'https://fpb.test/equipa',
     ]);
 
@@ -117,7 +117,7 @@ test('team edit can trigger fpb imports from livewire', function () {
         'https://fpb.test/equipa' => Http::response(<<<'HTML'
 <div class="roster__player">
 <a href="/atletas/777"></a>
-<h2 class="header__heading">Ana Silva</h2>
+<h2 class="header__heading">Example Member</h2>
 <div class="header_jnumber">11</div>
 </div>
 HTML),

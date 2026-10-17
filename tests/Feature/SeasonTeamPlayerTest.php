@@ -197,19 +197,19 @@ test('a club role creates a player on its own team', function () {
 
     Livewire::actingAs($access)
         ->test(CreatePlayer::class)
-        ->set('name', 'Rui Costa')
+        ->set('name', 'Example Player')
         ->set('teamId', (string) $team->id)
         ->set('number', '10')
         ->call('save')
         ->assertHasNoErrors()
         ->assertRedirect(route('players.index'));
 
-    $player = Player::query()->where('name', 'Rui Costa')->first();
+    $player = Player::query()->where('name', 'Example Player')->first();
 
     expect($player)->not->toBeNull()
         ->and($player->team_id)->toBe($team->id)
         ->and($player->number)->toBe(10)
-        ->and($player->slug)->toBe('rui-costa');
+        ->and($player->slug)->toBe('example-player');
 });
 
 test('a repeated shirt number on the same team is rejected', function () {
@@ -222,7 +222,7 @@ test('a repeated shirt number on the same team is rejected', function () {
 
     Livewire::actingAs($administrator)
         ->test(CreatePlayer::class)
-        ->set('name', 'Ana Silva')
+        ->set('name', 'Example Member')
         ->set('teamId', (string) $team->id)
         ->set('number', '7')
         ->call('save')
@@ -428,7 +428,7 @@ test('a club role cannot create a player on another club team', function () {
 
     Livewire::actingAs($access)
         ->test(CreatePlayer::class)
-        ->set('name', 'Rui Costa')
+        ->set('name', 'Example Player')
         ->set('teamId', (string) $otherTeam->id)
         ->call('save')
         ->assertForbidden();

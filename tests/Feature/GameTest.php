@@ -28,7 +28,7 @@ test('a club role creates a game for its own team', function () {
         ->test(CreateGame::class)
         ->set('teamId', (string) $team->id)
         ->set('fpbId', 'FPB-1')
-        ->set('opponent', 'Benfica')
+        ->set('opponent', 'Metro United')
         ->set('dateTime', '2026-10-04T18:30')
         ->set('place', 'Pavilhão')
         ->set('homeAway', HomeAway::Home->value)
@@ -39,7 +39,7 @@ test('a club role creates a game for its own team', function () {
         ->assertHasNoErrors()
         ->assertRedirect(route('games.index'));
 
-    $game = Game::query()->where('opponent', 'Benfica')->first();
+    $game = Game::query()->where('opponent', 'Metro United')->first();
 
     expect($game)->not->toBeNull()
         ->and($game->uuid)->toBeUuid()
@@ -92,7 +92,7 @@ test('a club role cannot create a game for another club team', function () {
 
     Livewire::actingAs($access)
         ->test(CreateGame::class)
-        ->set('opponent', 'Benfica')
+        ->set('opponent', 'Metro United')
         ->set('dateTime', '2026-10-04T18:30')
         ->set('homeAway', HomeAway::Away->value)
         ->set('status', GameStatus::Scheduled->value)
@@ -139,7 +139,7 @@ test('a repeated fpb id is rejected', function () {
     Livewire::actingAs($administrator)
         ->test(CreateGame::class)
         ->set('teamId', (string) $team->id)
-        ->set('opponent', 'Porto')
+        ->set('opponent', 'River City')
         ->set('dateTime', '2026-10-04T18:30')
         ->set('homeAway', HomeAway::Home->value)
         ->set('status', GameStatus::Scheduled->value)

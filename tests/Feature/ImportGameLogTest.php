@@ -25,10 +25,10 @@ function gameReadyForPlayByPlayImport(): array
 {
     $club = Club::factory()->create();
     $administrator = User::factory()->administrator()->create();
-    $team = Team::factory()->create(['club_id' => $club->id, 'name' => 'ADM S18M']);
+    $team = Team::factory()->create(['club_id' => $club->id, 'name' => 'North City U18']);
     $game = Game::factory()->create([
         'team_id' => $team->id,
-        'opponent' => 'Gafanha',
+        'opponent' => 'South Valley',
         'home_away' => HomeAway::Home,
         'quarter_minutes' => 10,
     ]);
@@ -69,7 +69,7 @@ function playByPlayCsv(array $rows): string
 /**
  * @return list<string>
  */
-function playByPlayRow(string $player, string $stat, string $lineup, string $period, string $opponent, string $team = 'ADM S18M', string $opposition = 'Gafanha', string $courtX = '', string $courtY = ''): array
+function playByPlayRow(string $player, string $stat, string $lineup, string $period, string $opponent, string $team = 'North City U18', string $opposition = 'South Valley', string $courtX = '', string $courtY = ''): array
 {
     return [$player, $team, $opposition, $stat, '2026-10-02T20:00:00Z', $lineup, '2026-10-02T20:00:00Z', $period, $opponent, '', '', '', '', $courtX, $courtY, '0'];
 }
@@ -143,10 +143,10 @@ test('a play-by-play csv for another game does not replace the log', function ()
     Livewire::actingAs($administrator)
         ->test(EditGame::class, ['game' => $game])
         ->set('logFile', UploadedFile::fake()->createWithContent('log.csv', playByPlayCsv([
-            playByPlayRow('#22 A', 'FloorTime', $lineup, '1', '0', opposition: 'Benfica'),
+            playByPlayRow('#22 A', 'FloorTime', $lineup, '1', '0', opposition: 'Metro United'),
         ])))
         ->call('importLog')
-        ->assertSee('The CSV is for ADM S18M against Benfica.');
+        ->assertSee('The CSV is for North City U18 against Metro United.');
 
     expect($game->events()->count())->toBe(1);
 });
@@ -163,7 +163,7 @@ test('a play-by-play import stores the court position', function () {
         ->set('logFile', UploadedFile::fake()->createWithContent('log.csv', playByPlayCsv([
             playByPlayRow('#22 A', 'FloorTime', $lineup, '1', '0'),
             playByPlayRow('#22 A', 'TwoPointFG', $lineup, '1', '0', courtX: '22,42', courtY: '8,05'),
-            playByPlayRow('Gafanha', 'ThreePointFGMiss', $lineup, '1', '1', courtX: '47,12', courtY: '4,99'),
+            playByPlayRow('South Valley', 'ThreePointFGMiss', $lineup, '1', '1', courtX: '47,12', courtY: '4,99'),
             playByPlayRow('#22 A', 'Foul', $lineup, '1', '0'),
         ])))
         ->call('importLog')
@@ -224,10 +224,10 @@ test('a play-by-play player is rejected', function (string $player, string $mess
 
 test('only an administrator can import a statistics log', function (string $role) {
     $club = Club::factory()->create();
-    $team = Team::factory()->create(['club_id' => $club->id, 'name' => 'ADM S18M']);
+    $team = Team::factory()->create(['club_id' => $club->id, 'name' => 'North City U18']);
     $game = Game::factory()->create([
         'team_id' => $team->id,
-        'opponent' => 'Gafanha',
+        'opponent' => 'South Valley',
     ]);
     $user = $role === 'club'
         ? User::factory()->clubAccessFor($club)->create()

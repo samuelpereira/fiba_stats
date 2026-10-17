@@ -35,7 +35,7 @@ test('the dashboard shows season summaries and upcoming games for a club', funct
     $team = Team::factory()->create(['club_id' => $club->id, 'season_id' => $season->id]);
     Game::factory()->create([
         'team_id' => $team->id,
-        'opponent' => 'Benfica',
+        'opponent' => 'Metro United',
         'date_time' => now()->addDay(),
         'status' => GameStatus::Scheduled,
         'home_away' => HomeAway::Home,
@@ -44,7 +44,7 @@ test('the dashboard shows season summaries and upcoming games for a club', funct
     Livewire::actingAs($access)
         ->test(Dashboard::class)
         ->assertSee('2024/2025')
-        ->assertSee('Benfica')
+        ->assertSee('Metro United')
         ->assertSee(__('Upcoming games'))
         ->assertSee('1')
         ->assertSee(__('Teams'));

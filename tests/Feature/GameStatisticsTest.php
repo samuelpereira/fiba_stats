@@ -26,12 +26,12 @@ test('the statistics button opens the game box score', function () {
     $member = User::factory()->memberOf($club)->withTeams($team)->create();
     $game = Game::factory()->create([
         'team_id' => $team->id,
-        'opponent' => 'Benfica',
+        'opponent' => 'Metro United',
         'home_away' => HomeAway::Home,
     ]);
     $player = Player::factory()->create([
         'team_id' => $team->id,
-        'name' => 'Joao Miguel',
+        'name' => 'Jordan Lake',
         'number' => 7,
     ]);
     $bench = Player::factory()->create([
@@ -125,8 +125,8 @@ test('the statistics button opens the game box score', function () {
     Livewire::actingAs($member)
         ->test(StatisticsShow::class, ['game' => $game])
         ->assertSee('ADC')
-        ->assertSee('Benfica')
-        ->assertSee('Joao Miguel')
+        ->assertSee('Metro United')
+        ->assertSee('Jordan Lake')
         ->assertSee('Pedro Silva')
         ->assertSee('On court')
         ->assertSee('Bench')
@@ -135,7 +135,7 @@ test('the statistics button opens the game box score', function () {
         ->assertSee('F')
         ->assertViewHas('homePeriodFouls', 2)
         ->assertViewHas('awayPeriodFouls', 1)
-        ->assertViewHas('courtPlayers', fn (array $players): bool => count($players) === 1 && $players[0]['name'] === 'Joao Miguel')
+        ->assertViewHas('courtPlayers', fn (array $players): bool => count($players) === 1 && $players[0]['name'] === 'Jordan Lake')
         ->assertViewHas('benchPlayers', fn (array $players): bool => count($players) === 1 && $players[0]['name'] === 'Pedro Silva')
         ->assertSee('1-1')
         ->assertSee('Matchup')
