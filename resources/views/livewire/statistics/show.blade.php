@@ -209,11 +209,11 @@
                     <tr class="border-b border-zinc-200 text-xs font-medium tracking-wide text-zinc-500 uppercase">
                         <th class="w-44 whitespace-nowrap py-2 pr-3 pl-4 font-medium sm:pl-6">{{ __('Player') }}</th>
                         <th class="px-2 py-2 text-right font-medium">{{ __('Pts') }}</th>
-                        <th class="px-2 py-2 text-right font-medium">{{ __('2P') }}</th>
+                        <th class="min-w-14 whitespace-nowrap px-2 py-2 text-right font-medium">{{ __('2P') }}</th>
                         <th class="px-2 py-2 text-center font-medium">{{ __('%') }}</th>
-                        <th class="px-2 py-2 text-right font-medium">{{ __('3P') }}</th>
+                        <th class="min-w-14 whitespace-nowrap px-2 py-2 text-right font-medium">{{ __('3P') }}</th>
                         <th class="px-2 py-2 text-center font-medium">{{ __('%') }}</th>
-                        <th class="px-2 py-2 text-right font-medium">{{ __('FT') }}</th>
+                        <th class="min-w-14 whitespace-nowrap px-2 py-2 text-right font-medium">{{ __('FT') }}</th>
                         <th class="px-2 py-2 text-center font-medium">{{ __('%') }}</th>
                         <th class="px-2 py-2 text-center font-medium">{{ __('DR') }}</th>
                         <th class="px-2 py-2 text-center font-medium">{{ __('OR') }}</th>
@@ -234,11 +234,11 @@
                                 <span class="ml-2">{{ $player['name'] }}</span>
                             </td>
                             <td class="px-2 py-2 text-right font-semibold tabular-nums">{{ $player['points'] }}</td>
-                            <td class="px-2 py-2 text-right tabular-nums">{{ $player['twoMade'] }}-{{ $player['twoAttempts'] }}</td>
+                            <td class="min-w-14 whitespace-nowrap px-2 py-2 text-right tabular-nums">{{ $player['twoMade'] }}-{{ $player['twoAttempts'] }}</td>
                             <td class="px-2 py-2 text-center tabular-nums">{{ $player['twoAttempts'] > 0 ? round(100 * $player['twoMade'] / $player['twoAttempts']).'%' : '—' }}</td>
-                            <td class="px-2 py-2 text-right tabular-nums">{{ $player['threeMade'] }}-{{ $player['threeAttempts'] }}</td>
+                            <td class="min-w-14 whitespace-nowrap px-2 py-2 text-right tabular-nums">{{ $player['threeMade'] }}-{{ $player['threeAttempts'] }}</td>
                             <td class="px-2 py-2 text-center tabular-nums">{{ $player['threeAttempts'] > 0 ? round(100 * $player['threeMade'] / $player['threeAttempts']).'%' : '—' }}</td>
-                            <td class="px-2 py-2 text-right tabular-nums">{{ $player['freeMade'] }}-{{ $player['freeAttempts'] }}</td>
+                            <td class="min-w-14 whitespace-nowrap px-2 py-2 text-right tabular-nums">{{ $player['freeMade'] }}-{{ $player['freeAttempts'] }}</td>
                             <td class="px-2 py-2 text-center tabular-nums">{{ $player['freeAttempts'] > 0 ? round(100 * $player['freeMade'] / $player['freeAttempts']).'%' : '—' }}</td>
                             <td class="px-2 py-2 text-center tabular-nums">{{ $player['defensiveRebounds'] }}</td>
                             <td class="px-2 py-2 text-center tabular-nums">{{ $player['offensiveRebounds'] }}</td>
@@ -253,12 +253,12 @@
                     @endforeach
                     <tr class="border-b border-zinc-200 font-semibold">
                         <td class="w-44 whitespace-nowrap py-2 pr-3 pl-4 sm:pl-6">{{ $teamName }}</td>
-                        <td class="px-2 py-2 text-right tabular-nums">{{ $boxScore['team']['points'] }}</td>
-                        <td class="px-2 py-2 text-right tabular-nums">{{ $boxScore['team']['twoMade'] }}-{{ $boxScore['team']['twoAttempts'] }}</td>
+                        <td class="min-w-14 whitespace-nowrap px-2 py-2 text-right tabular-nums">{{ $boxScore['team']['points'] }}</td>
+                        <td class="min-w-14 whitespace-nowrap px-2 py-2 text-right tabular-nums">{{ $boxScore['team']['twoMade'] }}-{{ $boxScore['team']['twoAttempts'] }}</td>
                         <td class="px-2 py-2 text-center tabular-nums">{{ $boxScore['team']['twoAttempts'] > 0 ? round(100 * $boxScore['team']['twoMade'] / $boxScore['team']['twoAttempts']).'%' : '—' }}</td>
-                        <td class="px-2 py-2 text-right tabular-nums">{{ $boxScore['team']['threeMade'] }}-{{ $boxScore['team']['threeAttempts'] }}</td>
+                        <td class="min-w-14 whitespace-nowrap px-2 py-2 text-right tabular-nums">{{ $boxScore['team']['threeMade'] }}-{{ $boxScore['team']['threeAttempts'] }}</td>
                         <td class="px-2 py-2 text-center tabular-nums">{{ $boxScore['team']['threeAttempts'] > 0 ? round(100 * $boxScore['team']['threeMade'] / $boxScore['team']['threeAttempts']).'%' : '—' }}</td>
-                        <td class="px-2 py-2 text-right tabular-nums">{{ $boxScore['team']['freeMade'] }}-{{ $boxScore['team']['freeAttempts'] }}</td>
+                        <td class="min-w-14 whitespace-nowrap px-2 py-2 text-right tabular-nums">{{ $boxScore['team']['freeMade'] }}-{{ $boxScore['team']['freeAttempts'] }}</td>
                         <td class="px-2 py-2 text-center tabular-nums">{{ $boxScore['team']['freeAttempts'] > 0 ? round(100 * $boxScore['team']['freeMade'] / $boxScore['team']['freeAttempts']).'%' : '—' }}</td>
                         <td class="px-2 py-2 text-center tabular-nums">{{ $boxScore['team']['defensiveRebounds'] }}</td>
                         <td class="px-2 py-2 text-center tabular-nums">{{ $boxScore['team']['offensiveRebounds'] }}</td>
@@ -272,12 +272,12 @@
                     </tr>
                     <tr class="font-semibold">
                         <td class="w-44 whitespace-nowrap py-2 pr-3 pl-4 sm:pl-6">{{ $opponentName }}</td>
-                        <td class="px-2 py-2 text-right tabular-nums">{{ $boxScore['opponent']['points'] }}</td>
-                        <td class="px-2 py-2 text-right tabular-nums">{{ $boxScore['opponent']['twoMade'] }}-{{ $boxScore['opponent']['twoAttempts'] }}</td>
+                        <td class="min-w-14 whitespace-nowrap px-2 py-2 text-right tabular-nums">{{ $boxScore['opponent']['points'] }}</td>
+                        <td class="min-w-14 whitespace-nowrap px-2 py-2 text-right tabular-nums">{{ $boxScore['opponent']['twoMade'] }}-{{ $boxScore['opponent']['twoAttempts'] }}</td>
                         <td class="px-2 py-2 text-center tabular-nums">{{ $boxScore['opponent']['twoAttempts'] > 0 ? round(100 * $boxScore['opponent']['twoMade'] / $boxScore['opponent']['twoAttempts']).'%' : '—' }}</td>
-                        <td class="px-2 py-2 text-right tabular-nums">{{ $boxScore['opponent']['threeMade'] }}-{{ $boxScore['opponent']['threeAttempts'] }}</td>
+                        <td class="min-w-14 whitespace-nowrap px-2 py-2 text-right tabular-nums">{{ $boxScore['opponent']['threeMade'] }}-{{ $boxScore['opponent']['threeAttempts'] }}</td>
                         <td class="px-2 py-2 text-center tabular-nums">{{ $boxScore['opponent']['threeAttempts'] > 0 ? round(100 * $boxScore['opponent']['threeMade'] / $boxScore['opponent']['threeAttempts']).'%' : '—' }}</td>
-                        <td class="px-2 py-2 text-right tabular-nums">{{ $boxScore['opponent']['freeMade'] }}-{{ $boxScore['opponent']['freeAttempts'] }}</td>
+                        <td class="min-w-14 whitespace-nowrap px-2 py-2 text-right tabular-nums">{{ $boxScore['opponent']['freeMade'] }}-{{ $boxScore['opponent']['freeAttempts'] }}</td>
                         <td class="px-2 py-2 text-center tabular-nums">{{ $boxScore['opponent']['freeAttempts'] > 0 ? round(100 * $boxScore['opponent']['freeMade'] / $boxScore['opponent']['freeAttempts']).'%' : '—' }}</td>
                         <td class="px-2 py-2 text-center tabular-nums">{{ $boxScore['opponent']['defensiveRebounds'] }}</td>
                         <td class="px-2 py-2 text-center tabular-nums">{{ $boxScore['opponent']['offensiveRebounds'] }}</td>

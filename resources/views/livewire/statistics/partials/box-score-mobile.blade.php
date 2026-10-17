@@ -44,15 +44,15 @@
             <dl class="mt-3 grid grid-cols-3 gap-2 rounded-lg bg-zinc-50 px-2 py-2 text-center text-xs">
                 <div>
                     <dt class="text-[10px] font-medium tracking-wide text-zinc-500 uppercase">{{ __('2P') }}</dt>
-                    <dd class="tabular-nums text-sm">{{ $player['twoMade'] }}-{{ $player['twoAttempts'] }} <span class="text-zinc-500">({{ $pct($player['twoMade'], $player['twoAttempts']) }})</span></dd>
+                    <dd class="whitespace-nowrap tabular-nums text-xs">{{ $player['twoMade'] }}-{{ $player['twoAttempts'] }} <span class="text-zinc-500">({{ $pct($player['twoMade'], $player['twoAttempts']) }})</span></dd>
                 </div>
                 <div>
                     <dt class="text-[10px] font-medium tracking-wide text-zinc-500 uppercase">{{ __('3P') }}</dt>
-                    <dd class="tabular-nums text-sm">{{ $player['threeMade'] }}-{{ $player['threeAttempts'] }} <span class="text-zinc-500">({{ $pct($player['threeMade'], $player['threeAttempts']) }})</span></dd>
+                    <dd class="whitespace-nowrap tabular-nums text-xs">{{ $player['threeMade'] }}-{{ $player['threeAttempts'] }} <span class="text-zinc-500">({{ $pct($player['threeMade'], $player['threeAttempts']) }})</span></dd>
                 </div>
                 <div>
                     <dt class="text-[10px] font-medium tracking-wide text-zinc-500 uppercase">{{ __('FT') }}</dt>
-                    <dd class="tabular-nums text-sm">{{ $player['freeMade'] }}-{{ $player['freeAttempts'] }} <span class="text-zinc-500">({{ $pct($player['freeMade'], $player['freeAttempts']) }})</span></dd>
+                    <dd class="whitespace-nowrap tabular-nums text-xs">{{ $player['freeMade'] }}-{{ $player['freeAttempts'] }} <span class="text-zinc-500">({{ $pct($player['freeMade'], $player['freeAttempts']) }})</span></dd>
                 </div>
             </dl>
         </article>
@@ -86,15 +86,15 @@
             <dl class="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
                 <div>
                     <dt class="font-medium text-zinc-500 uppercase">{{ __('2P') }}</dt>
-                    <dd class="tabular-nums">{{ $line['twoMade'] }}-{{ $line['twoAttempts'] }} ({{ $pct($line['twoMade'], $line['twoAttempts']) }})</dd>
+                    <dd class="whitespace-nowrap tabular-nums">{{ $line['twoMade'] }}-{{ $line['twoAttempts'] }} ({{ $pct($line['twoMade'], $line['twoAttempts']) }})</dd>
                 </div>
                 <div>
                     <dt class="font-medium text-zinc-500 uppercase">{{ __('3P') }}</dt>
-                    <dd class="tabular-nums">{{ $line['threeMade'] }}-{{ $line['threeAttempts'] }} ({{ $pct($line['threeMade'], $line['threeAttempts']) }})</dd>
+                    <dd class="whitespace-nowrap tabular-nums">{{ $line['threeMade'] }}-{{ $line['threeAttempts'] }} ({{ $pct($line['threeMade'], $line['threeAttempts']) }})</dd>
                 </div>
                 <div>
                     <dt class="font-medium text-zinc-500 uppercase">{{ __('FT') }}</dt>
-                    <dd class="tabular-nums">{{ $line['freeMade'] }}-{{ $line['freeAttempts'] }} ({{ $pct($line['freeMade'], $line['freeAttempts']) }})</dd>
+                    <dd class="whitespace-nowrap tabular-nums">{{ $line['freeMade'] }}-{{ $line['freeAttempts'] }} ({{ $pct($line['freeMade'], $line['freeAttempts']) }})</dd>
                 </div>
             </dl>
         </article>
