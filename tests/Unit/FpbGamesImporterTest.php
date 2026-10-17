@@ -6,7 +6,13 @@ test('fpb parse extracts fixtures from team page html', function () {
     $html = <<<'HTML'
 <h3 class="date">15 OUT 2025</h3>
 <a href="/ficha-de-jogo?internalID=99901">
+<div class="image-container">
+<img alt="Logo Test Club Alpha" src="/uploads/clubes/logotipo/alpha.jpg">
+</div>
 <span class="fullName">Test Club Alpha</span>
+<div class="image-container">
+<img alt="Logo Test Club Beta" src="https://logos.test/beta.jpg">
+</div>
 <span class="fullName">Test Club Beta</span>
 <div class="results_text">72</div>
 <div class="results_text">68</div>
@@ -25,6 +31,8 @@ HTML;
         ->and($fixtures[0]['pf'])->toBe(68)
         ->and($fixtures[0]['loc'])->toBe('Example City, Arena')
         ->and($fixtures[0]['comp'])->toBe('Jornada 3')
+        ->and($fixtures[0]['home_logo'])->toBe('https://www.fpb.pt/uploads/clubes/logotipo/alpha.jpg')
+        ->and($fixtures[0]['away_logo'])->toBe('https://logos.test/beta.jpg')
         ->and($fixtures[0]['date_time']->format('Y-m-d H:i'))->toBe('2025-10-15 20:30');
 });
 

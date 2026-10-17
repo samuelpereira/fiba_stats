@@ -2,18 +2,34 @@
     $pendingStat = $pendingType ? \App\Enums\StatType::from($pendingType) : null;
 @endphp
 
-<div data-statistics-record>
+<div data-statistics-record x-init="$store.collectQueue.bind($wire)">
 @if (! $this->lineupReady)
     <div wire:key="lineup-setup" class="flex h-dvh min-h-0 flex-col bg-zinc-100 text-zinc-900">
-        <header class="px-4 py-3 text-center">
-            @if ($editingSquad || ! $this->squadReady)
-                <h1 class="text-sm font-medium sm:text-base">{{ __('Players in this game') }}</h1>
-                <p class="mt-1 text-sm text-zinc-500">{{ __('Choose at least 5 players.') }}</p>
-            @else
-                <h1 class="text-sm font-medium sm:text-base">{{ __('Starting five') }}</h1>
-                <p class="mt-1 text-sm text-zinc-500">{{ __('Choose the 5 players who start.') }}</p>
-            @endif
-        </header>
+        @if ($editingSquad || ! $this->squadReady)
+            <header class="shrink-0 border-b border-zinc-200 bg-white">
+                <div class="mx-auto grid w-full grid-cols-3 items-center px-4 py-3">
+                    <button type="button" wire:click="leaveSquadSelection" class="inline-flex items-center gap-2 text-sm font-medium text-zinc-900">
+                        <flux:icon name="arrow-left" class="size-4" />
+                        {{ __('Back') }}
+                    </button>
+                    <h1 class="truncate text-center text-sm font-medium sm:text-base">{{ __('Players in this game') }}</h1>
+                    <span></span>
+                </div>
+            </header>
+            <p class="px-4 py-3 text-center text-sm text-zinc-500">{{ __('Choose at least 5 players.') }}</p>
+        @else
+            <header class="shrink-0 border-b border-zinc-200 bg-white">
+                <div class="mx-auto grid w-full grid-cols-3 items-center px-4 py-3">
+                    <button type="button" wire:click="changeLineup" class="inline-flex items-center gap-2 text-sm font-medium text-zinc-900">
+                        <flux:icon name="arrow-left" class="size-4" />
+                        {{ __('Back') }}
+                    </button>
+                    <h1 class="truncate text-center text-sm font-medium sm:text-base">{{ __('Starting five') }}</h1>
+                    <span></span>
+                </div>
+            </header>
+            <p class="px-4 py-3 text-center text-sm text-zinc-500">{{ __('Choose the 5 players who start.') }}</p>
+        @endif
         @error('squad')
             <p class="px-4 text-center text-xs text-red-700">{{ $message }}</p>
         @enderror
@@ -39,33 +55,33 @@
                 @endforeach
             </div>
         </div>
-        <div class="flex items-center justify-between gap-3 border-t border-zinc-200 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-            @if (! $editingSquad && $this->squadReady && ! $this->gameStarted)
-                <button type="button" wire:click="changeLineup" class="min-h-11 px-2 text-sm text-zinc-900">{{ __('Back') }}</button>
-            @else
-                <span></span>
-            @endif
+        <div class="flex items-center justify-end gap-3 border-t border-zinc-200 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             @if ($editingSquad || ! $this->squadReady)
                 <button type="button" wire:click="saveSquad" class="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white">{{ __('Continue') }}</button>
             @else
-                <button type="button" wire:click="saveStarters" class="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white">{{ __('Confirm lineup') }}</button>
+                <button type="button" wire:click="saveStarters" class="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white">{{ __('Confirm') }}</button>
             @endif
         </div>
     </div>
 @elseif ($configuringGame)
     <div wire:key="game-settings" class="flex h-dvh min-h-0 flex-col bg-zinc-100 text-zinc-900">
-        <header class="grid shrink-0 grid-cols-3 items-center px-4 py-3">
-            <span></span>
-            <h1 class="pointer-events-none min-w-0 truncate text-center text-sm font-medium sm:text-base">{{ __('Game settings') }}</h1>
-            <button type="button" wire:click="$set('configuringGame', false)" class="relative z-10 justify-self-end rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800">{{ __('Cancel') }}</button>
+        <header class="shrink-0 border-b border-zinc-200 bg-white">
+            <div class="mx-auto grid w-full grid-cols-3 items-center px-4 py-3">
+                <button type="button" wire:click="$set('configuringGame', false)" class="inline-flex items-center gap-2 text-sm font-medium text-zinc-900">
+                    <flux:icon name="arrow-left" class="size-4" />
+                    {{ __('Back') }}
+                </button>
+                <h1 class="truncate text-center text-sm font-medium sm:text-base">{{ __('Configuration') }}</h1>
+                <span></span>
+            </div>
         </header>
         <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-6">
             @php
                 $homeSideName = $this->game->home_away === \App\Enums\HomeAway::Home ? $teamName : $opponentName;
                 $awaySideName = $this->game->home_away === \App\Enums\HomeAway::Home ? $opponentName : $teamName;
             @endphp
-            <div class="grid grid-cols-2 items-start gap-6">
-                <div class="mx-auto flex flex-col gap-3" style="width: 80%">
+            <div class="grid grid-cols-1 items-start gap-6 md:grid-cols-2">
+                <div class="mx-auto flex w-full flex-col gap-3 md:w-4/5">
                     <label>
                         <span class="text-sm text-zinc-500">{{ __('Period (minutes)') }}</span>
                         <input wire:model="quarterMinutes" type="number" min="1" max="99" inputmode="numeric" class="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-center text-lg tabular-nums" />
@@ -88,7 +104,7 @@
                         </span>
                     </label>
                 </div>
-                <div class="mx-auto flex flex-col items-center gap-4" style="width: 80%">
+                <div class="mx-auto flex w-full flex-col items-center gap-4 md:w-4/5">
                     <div class="w-full">
                         <p class="truncate text-center text-sm text-zinc-500">{{ $homeSideName }} · {{ __('At home') }}</p>
                         <div class="mt-2 grid w-full gap-2" style="grid-template-columns: repeat(8, minmax(0, 1fr));">
@@ -194,10 +210,15 @@
     </div>
 @elseif ($substituting)
     <div wire:key="substitution" class="flex h-dvh min-h-0 flex-col bg-zinc-100 text-zinc-900">
-        <header class="grid shrink-0 grid-cols-3 items-center px-4 py-3">
-            <span></span>
-            <h1 class="pointer-events-none min-w-0 truncate text-center text-sm font-medium sm:text-base">{{ __('Substitution') }}</h1>
-            <button type="button" wire:click="cancel" class="relative z-10 justify-self-end rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800">{{ __('Cancel') }}</button>
+        <header class="shrink-0 border-b border-zinc-200 bg-white">
+            <div class="mx-auto grid w-full grid-cols-3 items-center px-4 py-3">
+                <button type="button" wire:click="cancel" class="inline-flex items-center gap-2 text-sm font-medium text-zinc-900">
+                    <flux:icon name="arrow-left" class="size-4" />
+                    {{ __('Back') }}
+                </button>
+                <h1 class="truncate text-center text-sm font-medium sm:text-base">{{ __('Substitution') }}</h1>
+                <span></span>
+            </div>
         </header>
         <p class="px-4 text-center text-sm text-zinc-500">{{ __('Mark 5 players.') }}</p>
         @error('court')
@@ -231,6 +252,19 @@
                                         {{ $player->name }}
                                     </span>
                                 </span>
+                                @php($personalFouls = $this->fouls['players'][$player->id] ?? 0)
+                                @if ($personalFouls > 0)
+                                    <span class="flex shrink-0 items-center gap-1">
+                                        @for ($mark = 0; $mark < $personalFouls; $mark++)
+                                            <span @class([
+                                                'size-2.5 rounded-sm',
+                                                'bg-green-700' => $personalFouls <= 3,
+                                                'bg-orange-600' => $personalFouls === 4,
+                                                'bg-red-700' => $personalFouls >= 5,
+                                            ])></span>
+                                        @endfor
+                                    </span>
+                                @endif
                             </button>
                         @endforeach
                     </div>
@@ -238,17 +272,18 @@
             @endforeach
         </div>
         <div class="flex justify-end border-t border-zinc-200 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-            <button type="button" wire:click="confirmSubstitutions" class="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white">{{ __('Confirm') }}</button>
+            <button type="button" x-on:click="$wire.confirmSubstitutions($store.gameClock?.formatted ?? null)" wire:loading.attr="disabled" wire:target="confirmSubstitutions" class="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white">{{ __('Confirm') }}</button>
         </div>
     </div>
 @else
-<div wire:key="stat-pad" class="flex h-dvh min-h-0 flex-col overflow-hidden bg-zinc-100 text-zinc-900 lg:hidden">
+<div class="hidden" data-collect-baseline>@json($collectQueue)</div>
+<div wire:key="stat-pad" class="flex h-dvh min-h-0 flex-col overflow-hidden bg-zinc-100 text-zinc-900 collect-desktop:hidden">
     @include('livewire.statistics.partials.scoreboard', ['bindGameClock' => true])
 
     <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div x-show="! $store.collectPane || $store.collectPane.name === 'scoring'" class="flex min-h-0 flex-1 flex-col overflow-hidden">
             <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2">
-            <div class="grid grid-cols-2 grid-rows-7 gap-2 portrait:grid-rows-7 portrait:gap-2">
+            <div class="grid grid-cols-2 grid-rows-7 gap-3 portrait:grid-rows-7 portrait:gap-3">
                 @foreach ([
                     [\App\Enums\StatType::ThreePointMade, '3P', 'made'],
                     [\App\Enums\StatType::ThreePointMissed, '3P', 'missed'],
@@ -256,30 +291,26 @@
                     [\App\Enums\StatType::TwoPointMissed, '2P', 'missed'],
                     [\App\Enums\StatType::FreeThrowMade, '1P', 'made'],
                     [\App\Enums\StatType::FreeThrowMissed, '1P', 'missed'],
-                    [\App\Enums\StatType::OffensiveRebound, \App\Enums\StatType::OffensiveRebound->buttonLines(), 'plain'],
                     [\App\Enums\StatType::DefensiveRebound, \App\Enums\StatType::DefensiveRebound->buttonLines(), 'plain'],
+                    [\App\Enums\StatType::OffensiveRebound, \App\Enums\StatType::OffensiveRebound->buttonLines(), 'plain'],
+                    [\App\Enums\StatType::Turnover, \App\Enums\StatType::Turnover->buttonLines(), 'plain'],
+                    [\App\Enums\StatType::Steal, \App\Enums\StatType::Steal->buttonLines(), 'plain'],
                     [\App\Enums\StatType::Assist, 'Assist', 'plain'],
                     [\App\Enums\StatType::Block, \App\Enums\StatType::Block->buttonLines(), 'plain'],
-                    [\App\Enums\StatType::Steal, \App\Enums\StatType::Steal->buttonLines(), 'plain'],
-                    [\App\Enums\StatType::Turnover, \App\Enums\StatType::Turnover->buttonLines(), 'plain'],
+                    [\App\Enums\StatType::Substitution, $substitutionLabel, 'alert'],
                     [\App\Enums\StatType::Foul, 'Foul', 'plain'],
-                    [\App\Enums\StatType::Substitution, $substitutionLabel, 'plain'],
                 ] as [$stat, $statLabel, $tone])
-                    @php($statEnabled = $stat === \App\Enums\StatType::Substitution ? (! $this->gameStarted || $this->periodIsOpen) : $this->periodIsOpen)
                     <button
                         type="button"
-                        wire:click="select('{{ $stat->value }}')"
-                        @disabled(! $statEnabled)
-                        @if ($stat === \App\Enums\StatType::Foul || $stat === \App\Enums\StatType::Substitution)
-                            @click="$store.gameClock.pause()"
-                        @endif
+                        x-on:click="if ('{{ $stat->value }}' === 'foul' || '{{ $stat->value }}' === 'substitution') $store.gameClock.pause(); $store.collectQueue.select('{{ $stat->value }}')"
+                        x-bind:disabled="! $store.collectQueue.statEnabled('{{ $stat->value }}')"
+                        x-bind:class="{ 'opacity-40': ! $store.collectQueue.statEnabled('{{ $stat->value }}'), 'ring-2 ring-zinc-900 ring-inset': $store.collectQueue.pendingType === '{{ $stat->value }}' }"
                         @class([
                             'flex min-h-0 flex-col items-center justify-center gap-1 rounded-lg border bg-white px-1 py-2 text-sm font-semibold tracking-wide leading-none shadow-sm portrait:h-[50px] portrait:min-h-[50px] portrait:max-h-[50px] portrait:gap-0.5 portrait:px-2 portrait:py-1',
                             'border-green-700 text-green-700' => $tone === 'made',
                             'border-red-700 text-red-700' => $tone === 'missed',
+                            'border-red-700 text-zinc-900' => $tone === 'alert',
                             'border-zinc-300 text-zinc-900' => $tone === 'plain',
-                            'ring-2 ring-zinc-900 ring-inset' => $pendingType === $stat->value,
-                            'opacity-40' => ! $statEnabled,
                         ])
                     >@foreach ((array) $statLabel as $line)<span>{{ __($line) }}</span>@endforeach</button>
                 @endforeach
@@ -291,12 +322,10 @@
             @foreach ($this->squad as $player)
                 @php($played = $this->lineup['seconds'][$player->id] ?? 0)
                 @php($onCourt = in_array($player->id, $this->lineup['court'], true))
-                <div wire:key="mobile-player-{{ $player->id }}" @class(['flex items-center gap-3 rounded-lg border bg-white px-3 py-2', 'border-zinc-900' => $onCourt, 'border-zinc-200' => ! $onCourt])>
+                <div wire:key="mobile-player-{{ $player->id }}" class="flex items-center gap-3 rounded-lg border bg-white px-3 py-2" :class="$store.collectQueue.onCourt({{ $player->id }}) ? 'border-zinc-900' : 'border-zinc-200'">
                     <span class="flex size-10 shrink-0 items-center justify-center rounded-md border border-zinc-300 text-sm font-semibold">{{ $player->number ?? '—' }}</span>
                     <span class="min-w-0 flex-1 truncate text-sm">{{ $player->name }}</span>
-                    @if ($onCourt)
-                        <span class="shrink-0 text-[11px] font-medium text-zinc-500">{{ __('On court') }}</span>
-                    @endif
+                    <span x-cloak x-show="$store.collectQueue.onCourt({{ $player->id }})" class="shrink-0 text-[11px] font-medium text-zinc-500">{{ __('On court') }}</span>
                     <span class="shrink-0 text-xs font-medium tabular-nums text-zinc-500">{{ intdiv($played, 60) }}:{{ sprintf('%02d', $played % 60) }}</span>
                     @php($personalFouls = $this->fouls['players'][$player->id] ?? 0)
                     <span @class(['shrink-0 text-sm font-medium tabular-nums', 'text-green-700' => $personalFouls >= 1 && $personalFouls <= 3, 'text-orange-600' => $personalFouls === 4, 'text-red-700' => $personalFouls >= 5])>{{ $personalFouls }} {{ __('FP') }}</span>
@@ -330,16 +359,16 @@
                 >{{ __('Game log') }}</button>
             </div>
             <div class="flex items-center justify-center gap-3 p-2">
-                <button type="button" wire:click="attemptExit" class="flex size-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 shadow-sm" aria-label="{{ __('Back') }}">
+                <button type="button" wire:click="attemptExit" x-bind:disabled="! $store.collectQueue.online" class="flex size-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 shadow-sm disabled:text-zinc-400" aria-label="{{ __('Back') }}">
                     <flux:icon name="arrow-left" class="size-5" />
                 </button>
-                <a href="{{ route('statistics.show', ['game' => $this->game, 'from' => 'record']) }}" wire:navigate class="flex size-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 shadow-sm" aria-label="{{ __('Statistics') }}">
+                <button type="button" x-bind:disabled="! $store.collectQueue.online" x-on:click="window.location.assign(@js(route('statistics.show', ['game' => $this->game, 'from' => 'record'])))" class="flex size-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 shadow-sm disabled:text-zinc-400" aria-label="{{ __('Statistics') }}">
                     <flux:icon name="chart-bar" class="size-5" />
-                </a>
-                <button type="button" wire:click="openGameSettings" class="flex size-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 shadow-sm" aria-label="{{ __('Game settings') }}">
+                </button>
+                <button type="button" wire:click="openGameSettings" x-bind:disabled="! $store.collectQueue.online" class="flex size-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 shadow-sm disabled:text-zinc-400" aria-label="{{ __('Game settings') }}">
                     <flux:icon name="cog-6-tooth" class="size-5" />
                 </button>
-                <button type="button" wire:click="undo" @disabled(! $this->canUndo) @class(['flex size-12 items-center justify-center rounded-xl bg-zinc-100 shadow-sm', 'text-zinc-700' => $this->canUndo, 'text-zinc-500' => ! $this->canUndo]) aria-label="{{ __('Undo') }}">
+                <button type="button" x-on:click="$store.collectQueue.undo()" x-bind:disabled="! $store.collectQueue.canUndo()" x-bind:class="$store.collectQueue.canUndo() ? 'text-zinc-700' : 'text-zinc-500'" class="flex size-12 items-center justify-center rounded-xl bg-zinc-100 shadow-sm" aria-label="{{ __('Undo') }}">
                     <flux:icon name="arrow-uturn-left" class="size-5" />
                 </button>
             </div>
@@ -347,9 +376,9 @@
     </div>
 </div>
 
-<div wire:key="stat-pad-desktop" class="hidden h-dvh overflow-hidden bg-zinc-100 text-zinc-900 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)]">
+<div wire:key="stat-pad-desktop" class="hidden h-dvh overflow-hidden bg-zinc-100 text-zinc-900 collect-desktop:grid collect-desktop:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)]">
     <section class="flex min-h-0 flex-col border-r border-zinc-200 p-2">
-        <div class="grid h-4/5 min-h-0 grid-cols-2 grid-rows-7 gap-2">
+        <div class="grid h-4/5 min-h-0 grid-cols-2 grid-rows-7 gap-3">
         @foreach ([
             [\App\Enums\StatType::TwoPointMade, '2P', 'made'],
             [\App\Enums\StatType::TwoPointMissed, '2P', 'missed'],
@@ -359,43 +388,39 @@
             [\App\Enums\StatType::FreeThrowMissed, '1P', 'missed'],
             [\App\Enums\StatType::DefensiveRebound, \App\Enums\StatType::DefensiveRebound->buttonLines(), 'plain'],
             [\App\Enums\StatType::OffensiveRebound, \App\Enums\StatType::OffensiveRebound->buttonLines(), 'plain'],
+            [\App\Enums\StatType::Turnover, \App\Enums\StatType::Turnover->buttonLines(), 'plain'],
+            [\App\Enums\StatType::Steal, \App\Enums\StatType::Steal->buttonLines(), 'plain'],
             [\App\Enums\StatType::Assist, 'Assist', 'plain'],
             [\App\Enums\StatType::Block, \App\Enums\StatType::Block->buttonLines(), 'plain'],
-            [\App\Enums\StatType::Steal, \App\Enums\StatType::Steal->buttonLines(), 'plain'],
-            [\App\Enums\StatType::Turnover, \App\Enums\StatType::Turnover->buttonLines(), 'plain'],
+            [\App\Enums\StatType::Substitution, $substitutionLabel, 'alert'],
             [\App\Enums\StatType::Foul, 'Foul', 'plain'],
-            [\App\Enums\StatType::Substitution, $substitutionLabel, 'plain'],
         ] as [$stat, $statLabel, $tone])
-            @php($statEnabled = $stat === \App\Enums\StatType::Substitution ? (! $this->gameStarted || $this->periodIsOpen) : $this->periodIsOpen)
             <button
                 type="button"
-                wire:click="select('{{ $stat->value }}')"
-                @disabled(! $statEnabled)
-                @if ($stat === \App\Enums\StatType::Foul || $stat === \App\Enums\StatType::Substitution)
-                    @click="$store.gameClock.pause()"
-                @endif
+                x-on:click="if ('{{ $stat->value }}' === 'foul' || '{{ $stat->value }}' === 'substitution') $store.gameClock.pause(); $store.collectQueue.select('{{ $stat->value }}')"
+                x-bind:disabled="! $store.collectQueue.statEnabled('{{ $stat->value }}')"
+                x-bind:class="{ 'opacity-40': ! $store.collectQueue.statEnabled('{{ $stat->value }}'), 'ring-2 ring-zinc-900 ring-inset': $store.collectQueue.pendingType === '{{ $stat->value }}' }"
                 @class([
                     'flex flex-col items-center justify-center gap-1 rounded-lg border bg-white text-sm font-semibold tracking-wide leading-none shadow-sm',
                     'border-green-700 text-green-700' => $tone === 'made',
                     'border-red-700 text-red-700' => $tone === 'missed',
+                    'border-red-700 text-zinc-900' => $tone === 'alert',
                     'border-zinc-300 text-zinc-900' => $tone === 'plain',
-                    'ring-2 ring-zinc-900 ring-inset' => $pendingType === $stat->value,
-                    'opacity-40' => ! $statEnabled,
                 ])
             >@foreach ((array) $statLabel as $line)<span>{{ __($line) }}</span>@endforeach</button>
         @endforeach
         </div>
         <div class="flex min-h-0 flex-1 items-end justify-center gap-3">
-            <button type="button" wire:click="attemptExit" class="flex size-12 items-center justify-center rounded-xl bg-white text-zinc-700 shadow-sm" aria-label="{{ __('Back') }}">
+            <button type="button" wire:click="attemptExit" x-bind:disabled="! $store.collectQueue.online" class="flex size-12 items-center justify-center rounded-xl bg-white text-zinc-700 shadow-sm disabled:text-zinc-400" aria-label="{{ __('Back') }}">
                 <flux:icon name="arrow-left" class="size-5" />
             </button>
-            <a href="{{ route('statistics.show', ['game' => $this->game, 'from' => 'record']) }}" wire:navigate class="flex size-12 items-center justify-center rounded-xl bg-white text-zinc-700 shadow-sm" aria-label="{{ __('Statistics') }}">
+            <button type="button" x-bind:disabled="! $store.collectQueue.online" x-on:click="window.location.assign(@js(route('statistics.show', ['game' => $this->game, 'from' => 'record'])))" class="flex size-12 items-center justify-center rounded-xl bg-white text-zinc-700 shadow-sm disabled:text-zinc-400" aria-label="{{ __('Statistics') }}">
                 <flux:icon name="chart-bar" class="size-5" />
-            </a>
-            <button type="button" wire:click="openGameSettings" class="flex size-12 items-center justify-center rounded-xl bg-white text-zinc-700 shadow-sm" aria-label="{{ __('Game settings') }}">
+            </button>
+            <button type="button" wire:click="openGameSettings" x-bind:disabled="! $store.collectQueue.online" class="flex size-12 items-center justify-center rounded-xl bg-white text-zinc-700 shadow-sm disabled:text-zinc-400" aria-label="{{ __('Game settings') }}">
                 <flux:icon name="cog-6-tooth" class="size-5" />
             </button>
-            <button type="button" wire:click="undo" @disabled(! $this->canUndo) @class(['flex size-12 items-center justify-center rounded-xl bg-white shadow-sm', 'text-zinc-700' => $this->canUndo, 'text-zinc-500' => ! $this->canUndo]) aria-label="{{ __('Undo') }}">
+            <button type="button" x-on:click="$store.collectQueue.undo()" x-bind:disabled="! $store.collectQueue.canUndo()" x-bind:class="$store.collectQueue.canUndo() ? 'text-zinc-700' : 'text-zinc-500'" class="flex size-12 items-center justify-center rounded-xl bg-white shadow-sm" aria-label="{{ __('Undo') }}">
                 <flux:icon name="arrow-uturn-left" class="size-5" />
             </button>
         </div>
@@ -413,14 +438,12 @@
                 @php($firstBench = $seenCourt && ! $onCourt && ! $benchStarted)
                 @php($seenCourt = $seenCourt || $onCourt)
                 @php($benchStarted = $benchStarted || ! $onCourt)
-                <div wire:key="lineup-{{ $player->id }}" @class(['flex items-center gap-3 rounded-lg border bg-white px-3 py-2', 'mt-2' => $firstBench, 'border-zinc-900' => $onCourt, 'border-zinc-200' => ! $onCourt])>
+                <div wire:key="lineup-{{ $player->id }}" @class(['mt-2' => $firstBench, 'flex items-center gap-3 rounded-lg border bg-white px-3 py-2']) :class="$store.collectQueue.onCourt({{ $player->id }}) ? 'border-zinc-900' : 'border-zinc-200'">
                     <span class="flex size-10 shrink-0 items-center justify-center rounded-md border border-zinc-300 text-sm font-semibold">
                         {{ $player->number ?? '—' }}
                     </span>
                     <span class="min-w-0 flex-1 truncate text-sm">{{ $player->name }}</span>
-                    @if ($onCourt)
-                        <span class="shrink-0 text-[11px] font-medium text-zinc-500">{{ __('On court') }}</span>
-                    @endif
+                    <span x-cloak x-show="$store.collectQueue.onCourt({{ $player->id }})" class="shrink-0 text-[11px] font-medium text-zinc-500">{{ __('On court') }}</span>
                     <span class="shrink-0 text-xs font-medium tabular-nums text-zinc-500">{{ intdiv($played, 60) }}:{{ sprintf('%02d', $played % 60) }}</span>
                     @php($personalFouls = $this->fouls['players'][$player->id] ?? 0)
                     <span @class(['shrink-0 text-sm font-medium tabular-nums', 'text-green-700' => $personalFouls >= 1 && $personalFouls <= 3, 'text-orange-600' => $personalFouls === 4, 'text-red-700' => $personalFouls >= 5])>{{ $personalFouls }} {{ __('FP') }}</span>
@@ -433,6 +456,203 @@
         @include('livewire.statistics.log', ['lines' => $this->lines, 'keyPrefix' => 'desktop-line', 'homeColor' => $this->game->home_color->hex(), 'awayColor' => $this->game->away_color->hex()])
     </section>
 </div>
+
+<div x-cloak x-show="$store.collectQueue.choosingPlayer" style="z-index: 80" class="fixed inset-0 flex h-dvh min-h-0 flex-col bg-white text-zinc-900">
+    <header class="shrink-0 border-b border-zinc-200 bg-white">
+        <div class="mx-auto grid w-full grid-cols-3 items-center px-4 py-3">
+            <button type="button" x-on:click="$store.collectQueue.closePicker()" class="inline-flex items-center gap-2 text-sm font-medium text-zinc-900">
+                <flux:icon name="arrow-left" class="size-4" />
+                {{ __('Back') }}
+            </button>
+            <h1 class="truncate text-center text-sm font-medium sm:text-base" x-text="$store.collectQueue.pickerTitle()"></h1>
+            <span></span>
+        </div>
+    </header>
+    <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-6">
+        <div class="flex flex-col gap-2 sm:grid sm:grid-cols-2 sm:content-start sm:gap-3 lg:grid-cols-3 xl:grid-cols-4">
+            <template x-for="player in $store.collectQueue.courtPlayers()" :key="player.id">
+                <button type="button" x-on:click="$store.collectQueue.recordPlayer(player.id)" class="flex w-full items-center gap-3 rounded-lg border border-zinc-300 bg-white px-3 py-3 text-left hover:border-zinc-900 sm:rounded-xl sm:py-4">
+                    <span class="pointer-events-none flex size-10 shrink-0 items-center justify-center rounded-full border border-zinc-900 sm:size-14">
+                        <flux:icon name="user" class="size-5 sm:size-7" />
+                    </span>
+                    <span class="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base" x-text="player.label"></span>
+                    <span x-cloak x-show="$store.collectQueue.pendingType === 'foul' && $store.collectQueue.foulCount(player.id) > 0" class="flex shrink-0 items-center gap-1">
+                        <template x-for="mark in $store.collectQueue.foulMarks(player.id)" :key="mark">
+                            <span
+                                class="size-2.5 rounded-sm"
+                                :class="{
+                                    'bg-green-700': $store.collectQueue.foulCount(player.id) <= 3,
+                                    'bg-orange-600': $store.collectQueue.foulCount(player.id) === 4,
+                                    'bg-red-700': $store.collectQueue.foulCount(player.id) >= 5,
+                                }"
+                            ></span>
+                        </template>
+                    </span>
+                </button>
+            </template>
+        </div>
+        <div class="mt-4 border-t border-zinc-200 pt-3">
+            <div class="flex flex-col gap-2 sm:grid sm:grid-cols-2 sm:content-start sm:gap-3 lg:grid-cols-3 xl:grid-cols-4">
+                <button type="button" x-on:click="$store.collectQueue.recordOpponent()" class="flex w-full items-center gap-3 rounded-lg border border-zinc-300 bg-white px-3 py-3 text-left hover:border-zinc-900 sm:rounded-xl sm:py-4">
+                    @include('livewire.statistics.partials.opponent-mark')
+                    <span class="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base">{{ $opponentName }}</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div x-cloak x-show="$store.collectQueue.choosingShot" style="z-index: 80" class="fixed inset-0 flex h-dvh min-h-0 flex-col bg-white text-zinc-900">
+    <header class="shrink-0 border-b border-zinc-200 bg-white">
+        <div class="mx-auto grid w-full grid-cols-3 items-center px-4 py-3">
+            <button type="button" x-on:click="$store.collectQueue.cancelShot()" class="inline-flex items-center gap-2 text-sm font-medium text-zinc-900">
+                <flux:icon name="arrow-left" class="size-4" />
+                {{ __('Back') }}
+            </button>
+            <h1 class="truncate text-center text-sm font-medium sm:text-base" x-text="$store.collectQueue.pickerTitle()"></h1>
+            <span></span>
+        </div>
+    </header>
+    <p x-cloak x-show="$store.collectQueue.shotError" class="px-4 text-center text-sm text-red-600">{{ __('Mark the shot inside the 2-point area for 2P, or outside for 3P.') }}</p>
+    <div class="mt-4 flex flex-1 flex-col justify-start px-4 sm:px-6">
+        <x-shot-court />
+    </div>
+</div>
+
+<div x-cloak x-show="$store.collectQueue.choosingTimeout" style="z-index: 80; background-color: rgb(24 24 27 / 0.4)" class="fixed inset-0 flex items-center justify-center p-4">
+    <div class="w-full max-w-sm space-y-4 rounded-xl bg-white p-6 text-zinc-900">
+        <div class="text-center">
+            <h2 class="text-base font-semibold">{{ __('Record timeout') }}</h2>
+            <p class="mt-2 text-sm text-zinc-500">{{ __('Select which team called the timeout') }}</p>
+        </div>
+        <div class="space-y-3">
+            <button type="button" x-on:click="$store.collectQueue.recordTimeout('home')" class="flex w-full items-center justify-between gap-3 rounded-lg border border-zinc-300 px-4 py-3 text-left hover:border-zinc-900">
+                <span class="min-w-0 truncate text-sm font-medium">{{ $this->game->home_away === \App\Enums\HomeAway::Home ? $teamName : $opponentName }}</span>
+                <span class="shrink-0 text-xs text-zinc-500">{{ __('At home') }}</span>
+            </button>
+            <button type="button" x-on:click="$store.collectQueue.recordTimeout('away')" class="flex w-full items-center justify-between gap-3 rounded-lg border border-zinc-300 px-4 py-3 text-left hover:border-zinc-900">
+                <span class="min-w-0 truncate text-sm font-medium">{{ $this->game->home_away === \App\Enums\HomeAway::Home ? $opponentName : $teamName }}</span>
+                <span class="shrink-0 text-xs text-zinc-500">{{ __('Away') }}</span>
+            </button>
+        </div>
+        <div class="flex justify-end">
+            <button type="button" x-on:click="$store.collectQueue.choosingTimeout = false" class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800">{{ __('Cancel') }}</button>
+        </div>
+    </div>
+</div>
+
+<div x-cloak x-show="$store.collectQueue.substituting" style="z-index: 80" class="fixed inset-0 flex h-dvh min-h-0 flex-col bg-zinc-100 text-zinc-900">
+    <header class="shrink-0 border-b border-zinc-200 bg-white">
+        <div class="mx-auto grid w-full grid-cols-3 items-center px-4 py-3">
+            <button type="button" x-on:click="$store.collectQueue.substituting = false" class="inline-flex items-center gap-2 text-sm font-medium text-zinc-900">
+                <flux:icon name="arrow-left" class="size-4" />
+                {{ __('Back') }}
+            </button>
+            <h1 class="truncate text-center text-sm font-medium sm:text-base">{{ __('Substitution') }}</h1>
+            <span></span>
+        </div>
+    </header>
+    <p class="px-4 text-center text-sm text-zinc-500">{{ __('Mark 5 players.') }}</p>
+    <p x-cloak x-show="$store.collectQueue.courtError" class="px-4 pt-1 text-center text-xs text-red-700">{{ __('Mark 5 players.') }}</p>
+    <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-6">
+        <div class="flex flex-col gap-2 sm:grid sm:grid-cols-2 sm:content-start sm:gap-3 lg:grid-cols-3">
+            <template x-for="player in $store.collectQueue.courtPlayers()" :key="'sub-court-' + player.id">
+                <button type="button" x-on:click="$store.collectQueue.toggleCourt(player.id)" class="flex w-full items-center gap-3 rounded-lg border px-3 py-3 text-left sm:rounded-xl sm:py-4" :class="$store.collectQueue.courtSelection.includes(player.id) ? 'border-zinc-900 bg-amber-100' : 'border-zinc-300 bg-white'">
+                    <span class="pointer-events-none flex size-10 shrink-0 items-center justify-center rounded-full border border-zinc-900 sm:size-14">
+                        <flux:icon name="user" class="size-5 sm:size-7" />
+                    </span>
+                    <span class="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base" x-text="player.label"></span>
+                    <span x-cloak x-show="$store.collectQueue.foulCount(player.id) > 0" class="flex shrink-0 items-center gap-1">
+                        <template x-for="mark in $store.collectQueue.foulMarks(player.id)" :key="mark">
+                            <span
+                                class="size-2.5 rounded-sm"
+                                :class="{
+                                    'bg-green-700': $store.collectQueue.foulCount(player.id) <= 3,
+                                    'bg-orange-600': $store.collectQueue.foulCount(player.id) === 4,
+                                    'bg-red-700': $store.collectQueue.foulCount(player.id) >= 5,
+                                }"
+                            ></span>
+                        </template>
+                    </span>
+                </button>
+            </template>
+        </div>
+        <div x-cloak x-show="$store.collectQueue.benchPlayers().length > 0" class="mt-4 border-t border-zinc-200 pt-3">
+            <div class="flex flex-col gap-2 sm:grid sm:grid-cols-2 sm:content-start sm:gap-3 lg:grid-cols-3">
+                <template x-for="player in $store.collectQueue.benchPlayers()" :key="'sub-bench-' + player.id">
+                    <button type="button" x-on:click="$store.collectQueue.toggleCourt(player.id)" class="flex w-full items-center gap-3 rounded-lg border px-3 py-3 text-left sm:rounded-xl sm:py-4" :class="$store.collectQueue.courtSelection.includes(player.id) ? 'border-zinc-900 bg-amber-100' : 'border-zinc-300 bg-white'">
+                        <span class="pointer-events-none flex size-10 shrink-0 items-center justify-center rounded-full border border-zinc-900 sm:size-14">
+                            <flux:icon name="user" class="size-5 sm:size-7" />
+                        </span>
+                        <span class="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base" x-text="player.label"></span>
+                        <span x-cloak x-show="$store.collectQueue.foulCount(player.id) > 0" class="flex shrink-0 items-center gap-1">
+                            <template x-for="mark in $store.collectQueue.foulMarks(player.id)" :key="mark">
+                                <span
+                                    class="size-2.5 rounded-sm"
+                                    :class="{
+                                        'bg-green-700': $store.collectQueue.foulCount(player.id) <= 3,
+                                        'bg-orange-600': $store.collectQueue.foulCount(player.id) === 4,
+                                        'bg-red-700': $store.collectQueue.foulCount(player.id) >= 5,
+                                    }"
+                                ></span>
+                            </template>
+                        </span>
+                    </button>
+                </template>
+            </div>
+        </div>
+    </div>
+    <div class="flex justify-end border-t border-zinc-200 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <button type="button" x-on:click="$store.collectQueue.confirmSubstitution()" class="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white">{{ __('Confirm') }}</button>
+    </div>
+</div>
+
+<div x-cloak x-show="$store.collectQueue.confirmingQuarterEnd" style="z-index: 80; background-color: rgb(24 24 27 / 0.4)" class="fixed inset-0 flex items-center justify-center p-4">
+    <div class="w-full max-w-sm space-y-6 rounded-xl bg-white p-6 text-zinc-900">
+        <div class="text-center">
+            <h2 class="text-base font-semibold">{{ $quarterTitle }}</h2>
+            <p class="mt-2 text-sm text-zinc-600" x-text="$store.collectQueue.endPeriodQuestion()"></p>
+            <p class="mt-3 text-sm font-medium text-red-700">{{ __('You cannot undo this action.') }}</p>
+        </div>
+        <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <button type="button" x-on:click="$store.collectQueue.confirmingQuarterEnd = false" class="w-full rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 sm:w-auto">{{ __('Cancel') }}</button>
+            <button type="button" x-on:click="$store.collectQueue.confirmEndQuarter()" class="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white sm:w-auto">{{ __('Confirm') }}</button>
+        </div>
+    </div>
+</div>
+
+<div x-cloak x-show="$store.collectQueue.editingPendingId !== null" style="z-index: 80" class="fixed inset-0 flex h-dvh min-h-0 flex-col bg-white text-zinc-900">
+    <header class="shrink-0 border-b border-zinc-200 bg-white">
+        <div class="mx-auto grid w-full grid-cols-3 items-center px-4 py-3">
+            <button type="button" x-on:click="$store.collectQueue.editingPendingId = null" class="inline-flex items-center gap-2 text-sm font-medium text-zinc-900">
+                <flux:icon name="arrow-left" class="size-4" />
+                {{ __('Back') }}
+            </button>
+            <h1 class="truncate text-center text-sm font-medium sm:text-base">{{ __('Edit') }}</h1>
+            <span></span>
+        </div>
+    </header>
+    <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-6">
+        <div class="flex flex-col gap-2 sm:grid sm:grid-cols-2 sm:content-start sm:gap-3 lg:grid-cols-3 xl:grid-cols-4">
+            <template x-for="player in $store.collectQueue.baseline?.roster ?? []" :key="'edit-' + player.id">
+                <button type="button" x-on:click="$store.collectQueue.editingPlayerId = player.id; $store.collectQueue.editingForOpponent = false" class="flex w-full items-center gap-3 rounded-lg border px-3 py-3 text-left sm:rounded-xl sm:py-4" :class="! $store.collectQueue.editingForOpponent && $store.collectQueue.editingPlayerId === player.id ? 'border-zinc-900 bg-amber-100' : 'border-zinc-300 bg-white'">
+                    <span class="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base" x-text="player.label"></span>
+                </button>
+            </template>
+            <button type="button" x-on:click="$store.collectQueue.editingPlayerId = null; $store.collectQueue.editingForOpponent = true" class="flex w-full items-center gap-3 rounded-lg border px-3 py-3 text-left sm:rounded-xl sm:py-4" :class="$store.collectQueue.editingForOpponent ? 'border-zinc-900 bg-amber-100' : 'border-zinc-300 bg-white'">
+                <span class="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base">{{ $opponentName }}</span>
+            </button>
+        </div>
+        <div class="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            <template x-for="stat in $store.collectQueue.baseline?.editableTypes ?? []" :key="stat.value">
+                <button type="button" x-on:click="$store.collectQueue.editingType = stat.value" class="w-full rounded-lg border bg-white px-3 py-2 text-sm font-medium" :class="{ 'border-green-700 text-green-700': stat.tone === 'made', 'border-red-700 text-red-700': stat.tone === 'missed', 'border-zinc-300 text-zinc-900': stat.tone === 'plain', 'ring-2 ring-zinc-900 ring-inset': $store.collectQueue.editingType === stat.value }" x-text="stat.label"></button>
+            </template>
+        </div>
+    </div>
+    <div class="flex shrink-0 justify-end border-t border-zinc-200 px-3 py-3 sm:px-6">
+        <button type="button" x-on:click="$store.collectQueue.savePendingEdit()" class="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white">{{ __('Confirm') }}</button>
+    </div>
+</div>
 @endif
 
 <flux:modal wire:model="choosingTimeout" :closable="false" class="max-w-sm !bg-white">
@@ -443,11 +663,11 @@
             <p class="mt-2 text-sm text-zinc-500">{{ __('Select which team called the timeout') }}</p>
         </div>
         <div class="space-y-3">
-            <button type="button" wire:click="recordTimeout('home')" class="flex w-full items-center justify-between gap-3 rounded-lg border border-zinc-300 px-4 py-3 text-left hover:border-zinc-900">
+            <button type="button" x-on:click="$wire.recordTimeout('home', $store.gameClock?.formatted ?? null)" wire:loading.attr="disabled" wire:target="recordTimeout" class="flex w-full items-center justify-between gap-3 rounded-lg border border-zinc-300 px-4 py-3 text-left hover:border-zinc-900">
                 <span class="min-w-0 truncate text-sm font-medium">{{ $timeoutAtHome ? $teamName : $opponentName }}</span>
                 <span class="shrink-0 text-xs text-zinc-500">{{ __('At home') }}</span>
             </button>
-            <button type="button" wire:click="recordTimeout('away')" class="flex w-full items-center justify-between gap-3 rounded-lg border border-zinc-300 px-4 py-3 text-left hover:border-zinc-900">
+            <button type="button" x-on:click="$wire.recordTimeout('away', $store.gameClock?.formatted ?? null)" wire:loading.attr="disabled" wire:target="recordTimeout" class="flex w-full items-center justify-between gap-3 rounded-lg border border-zinc-300 px-4 py-3 text-left hover:border-zinc-900">
                 <span class="min-w-0 truncate text-sm font-medium">{{ $timeoutAtHome ? $opponentName : $teamName }}</span>
                 <span class="shrink-0 text-xs text-zinc-500">{{ __('Away') }}</span>
             </button>
@@ -471,7 +691,9 @@
                         <button
                             type="button"
                             wire:key="player-{{ $player->id }}"
-                            wire:click="record({{ $player->id }})"
+                            x-on:click="$wire.record({{ $player->id }}, $store.gameClock?.formatted ?? null)"
+                            wire:loading.attr="disabled"
+                            wire:target="record, recordOpponent, recordShotLocation"
                             class="flex w-full items-center gap-3 rounded-lg border border-zinc-300 bg-white px-3 py-3 text-left hover:border-zinc-900 sm:rounded-xl sm:py-4"
                         >
                             <span class="pointer-events-none flex size-10 shrink-0 items-center justify-center rounded-full border border-zinc-900 sm:size-14">
@@ -486,18 +708,37 @@
                                     {{ $player->name }}
                                 </span>
                             </span>
+                            @if ($pendingStat === \App\Enums\StatType::Foul)
+                                @php($personalFouls = $this->fouls['players'][$player->id] ?? 0)
+                                @if ($personalFouls > 0)
+                                    <span class="flex shrink-0 items-center gap-1">
+                                        @for ($mark = 0; $mark < $personalFouls; $mark++)
+                                            <span @class([
+                                                'size-2.5 rounded-sm',
+                                                'bg-green-700' => $personalFouls <= 3,
+                                                'bg-orange-600' => $personalFouls === 4,
+                                                'bg-red-700' => $personalFouls >= 5,
+                                            ])></span>
+                                        @endfor
+                                    </span>
+                                @endif
+                            @endif
                         </button>
                     @endforeach
-                    <button
-                        type="button"
-                        wire:click="recordOpponent"
-                        class="flex w-full items-center gap-3 rounded-lg border border-zinc-300 bg-white px-3 py-3 text-left hover:border-zinc-900 sm:rounded-xl sm:py-4"
-                    >
-                        <span class="pointer-events-none flex size-10 shrink-0 items-center justify-center rounded-full border border-zinc-900 sm:size-14">
-                            <flux:icon name="user-group" class="size-5 sm:size-7" />
-                        </span>
-                        <span class="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base">{{ $opponentName }}</span>
-                    </button>
+                </div>
+                <div class="mt-4 border-t border-zinc-200 pt-3">
+                    <div class="flex flex-col gap-2 sm:grid sm:grid-cols-2 sm:content-start sm:gap-3 lg:grid-cols-3 xl:grid-cols-4">
+                        <button
+                            type="button"
+                            x-on:click="$wire.recordOpponent($store.gameClock?.formatted ?? null)"
+                            wire:loading.attr="disabled"
+                            wire:target="record, recordOpponent, recordShotLocation"
+                            class="flex w-full items-center gap-3 rounded-lg border border-zinc-300 bg-white px-3 py-3 text-left hover:border-zinc-900 sm:rounded-xl sm:py-4"
+                        >
+                            @include('livewire.statistics.partials.opponent-mark')
+                            <span class="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base">{{ $opponentName }}</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -518,6 +759,7 @@
     @endif
 </flux:modal>
 
+@if ($this->lineupReady)
 <flux:modal wire:model="editingAction" :closable="false" class="statistics-collect-modal !bg-white">
     <div class="flex h-dvh min-h-0 flex-col text-zinc-900">
         @include('livewire.statistics.partials.collect-modal-header', ['title' => __('Edit'), 'cancelAction' => 'cancelEditingAction'])
@@ -557,9 +799,7 @@
                         'border-zinc-300 bg-white hover:border-zinc-900' => ! $editingForOpponent,
                     ])
                 >
-                    <span class="pointer-events-none flex size-10 shrink-0 items-center justify-center rounded-full border border-zinc-900 sm:size-14">
-                        <flux:icon name="user-group" class="size-5 sm:size-7" />
-                    </span>
+                    @include('livewire.statistics.partials.opponent-mark')
                     <span class="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base">{{ $opponentName }}</span>
                 </button>
             </div>
@@ -573,10 +813,10 @@
                     [\App\Enums\StatType::FreeThrowMissed, 'missed'],
                     [\App\Enums\StatType::DefensiveRebound, 'plain'],
                     [\App\Enums\StatType::OffensiveRebound, 'plain'],
+                    [\App\Enums\StatType::Turnover, 'plain'],
+                    [\App\Enums\StatType::Steal, 'plain'],
                     [\App\Enums\StatType::Assist, 'plain'],
                     [\App\Enums\StatType::Block, 'plain'],
-                    [\App\Enums\StatType::Steal, 'plain'],
-                    [\App\Enums\StatType::Turnover, 'plain'],
                     [\App\Enums\StatType::Foul, 'plain'],
                 ] as [$stat, $tone])
                     <button
@@ -594,20 +834,22 @@
             </div>
         </div>
         <div class="flex shrink-0 justify-end border-t border-zinc-200 px-3 py-3 sm:px-6">
-            <button type="button" wire:click="saveLogLine" class="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white">{{ __('Confirm') }}</button>
+            <button type="button" x-on:click="$store.collectQueue.saveConfirmedEdit()" class="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white">{{ __('Confirm') }}</button>
         </div>
     </div>
 </flux:modal>
+@endif
 
-<flux:modal wire:model="confirmingQuarterEnd" :closable="false" class="statistics-collect-modal max-w-md !bg-white">
-    <div class="flex h-dvh min-h-0 flex-col text-zinc-900">
-        @include('livewire.statistics.partials.collect-modal-header', ['title' => $quarterTitle, 'cancelAction' => 'cancelConfirmingQuarterEnd'])
-        <div class="flex-1 space-y-3 px-4 text-center">
-            <p class="text-sm text-zinc-600">{{ $endPeriodQuestion }}</p>
-            <p class="text-sm font-medium text-red-700">{{ __('You cannot undo this action.') }}</p>
+<flux:modal wire:model="confirmingQuarterEnd" :closable="false" class="max-w-sm !bg-white">
+    <div class="space-y-6 text-zinc-900">
+        <div class="text-center">
+            <h2 class="text-base font-semibold">{{ $quarterTitle }}</h2>
+            <p class="mt-2 text-sm text-zinc-600">{{ $endPeriodQuestion }}</p>
+            <p class="mt-3 text-sm font-medium text-red-700">{{ __('You cannot undo this action.') }}</p>
         </div>
-        <div class="flex shrink-0 justify-end border-t border-zinc-200 px-3 py-3 sm:px-6">
-            <button type="button" wire:click="endQuarter" class="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white">{{ __('Confirm') }}</button>
+        <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <button type="button" wire:click="cancelConfirmingQuarterEnd" class="w-full rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 sm:w-auto">{{ __('Cancel') }}</button>
+            <button type="button" wire:click="endQuarter" class="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white sm:w-auto">{{ __('Confirm') }}</button>
         </div>
     </div>
 </flux:modal>
@@ -624,7 +866,7 @@
     </div>
 </flux:modal>
 
-<flux:modal wire:model="confirmingGameFinish" :closable="false" class="statistics-collect-modal max-w-md !bg-white">
+<flux:modal wire:model="confirmingGameFinish" :closable="false" class="max-w-sm !bg-white">
     <div class="space-y-6 text-zinc-900">
         <div class="text-center">
             <h2 class="text-base font-semibold">{{ __('Finish game?') }}</h2>
@@ -632,11 +874,14 @@
         </div>
         <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
             <button type="button" wire:click="leaveWithoutFinishing" class="w-full rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 sm:w-auto">{{ __('Leave without finishing') }}</button>
-            <button type="button" wire:click="finishGameAndExit" class="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white sm:w-auto">{{ __('Finish game') }}</button>
+            <button type="button" x-on:click="$store.collectQueue.finishGame()" class="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white sm:w-auto">{{ __('Finish game') }}</button>
         </div>
     </div>
 </flux:modal>
 @once
+    <script>
+        {!! file_get_contents(resource_path('js/collect-queue.js')) !!}
+    </script>
     <script>
         (function () {
             const registerGameClockListeners = () => {
@@ -645,20 +890,6 @@
                 }
 
                 window.__gameClockListenersRegistered = true;
-
-                document.addEventListener('pointerdown', (event) => {
-                    const clock = window.Alpine.store('gameClock');
-
-                    if (! clock?.alive()) {
-                        return;
-                    }
-
-                    if (event.target instanceof Element && event.target.closest('input, select, textarea')) {
-                        return;
-                    }
-
-                    clock.publish();
-                }, true);
 
                 document.addEventListener('livewire:navigated', () => {
                     requestAnimationFrame(() => {
@@ -731,21 +962,29 @@
                         return;
                     }
 
-                    if (wire.awaitingQuarterStart) {
-                        wire.startQuarter();
+                    const queue = window.Alpine.store('collectQueue');
+                    const awaitingQuarterStart = queue?.local?.awaitingQuarterStart ?? wire.awaitingQuarterStart;
+                    const quarterEnded = queue?.local?.quarterEnded ?? wire.quarterEnded;
+
+                    if (awaitingQuarterStart) {
+                        queue?.startQuarter();
 
                         return;
                     }
 
-                    if (! this.running && this.remaining === 0 && ! wire.quarterEnded) {
-                        wire.askToEndQuarter();
+                    if (! this.running && this.remaining === 0 && ! quarterEnded) {
+                        queue?.askToEndQuarter();
 
                         return;
                     }
 
                     if (! this.running) {
-                        wire.recordQuarterStart();
-                        this.start();
+                        const queuedStart = queue?.recordQuarterStart(this.formatted) ?? Promise.resolve();
+                        queuedStart.then(() => {
+                            if (! this.running) {
+                                this.start();
+                            }
+                        });
 
                         return;
                     }
@@ -800,11 +1039,10 @@
 
                     this.remaining -= 1;
                     this.formatted = this.format(this.remaining);
-                    this.publish();
                 },
                 apply(value) {
                     this.stop();
-                    this.setFrom(value);
+                    this.setFrom(value, false);
                 },
                 hold() {
                     this.stop();
@@ -813,10 +1051,10 @@
                 },
                 begin(value) {
                     this.stop();
-                    this.setFrom(value ?? '10:00');
+                    this.setFrom(value ?? '10:00', false);
                     this.start();
                 },
-                setFrom(value) {
+                setFrom(value, publish = true) {
                     const parsed = this.parse(value);
 
                     if (parsed === null) {
@@ -830,7 +1068,9 @@
                         this.stop();
                     }
 
-                    this.publish();
+                    if (publish) {
+                        this.publish();
+                    }
                 },
                 parse(value) {
                     if (typeof value !== 'string' || ! /^\d{1,2}:\d{2}$/.test(value)) {
@@ -894,4 +1134,14 @@
         });
     </script>
 @endscript
+<div
+    x-cloak
+    x-show="$store.collectQueue.pendingCount() > 0"
+    class="pointer-events-none fixed inset-x-0 bottom-6 z-[70] flex justify-center"
+>
+    <p class="rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow">
+        <span x-show="$store.collectQueue.online">{{ __('Saving…') }}</span>
+        <span x-cloak x-show="! $store.collectQueue.online">{{ __('Offline') }}</span>
+    </p>
+</div>
 </div>

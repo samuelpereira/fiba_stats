@@ -7,6 +7,28 @@
         </tr>
     </thead>
     <tbody>
+        <template x-for="line in $store.collectQueue.lines" :key="line.id">
+            <tr
+                class="border-b border-zinc-300 bg-zinc-200 align-top last:border-b-0"
+                :class="line.editable ? 'cursor-pointer' : ''"
+                @click="if (line.editable) $store.collectQueue.editPending(line.id)"
+            >
+                <td class="px-2 py-2 tabular-nums text-zinc-500" :style="line.side === 'home' ? 'box-shadow: inset 4px 0 0 {{ $homeColor }}' : ''" x-text="line.clock"></td>
+                <td class="max-w-0 px-2 py-2">
+                    <template x-if="line.playerLines.length > 0">
+                        <div class="leading-tight">
+                            <template x-for="playerLine in line.playerLines" :key="playerLine.name">
+                                <p class="truncate font-medium" :class="playerLine.enters ? 'text-green-700' : 'text-red-700'" x-text="playerLine.name"></p>
+                            </template>
+                        </div>
+                    </template>
+                    <p x-show="line.playerLines.length === 0" class="truncate" x-text="line.player"></p>
+                </td>
+                <td class="px-2 py-2 text-right" :style="line.side === 'away' ? 'box-shadow: inset -4px 0 0 {{ $awayColor }}' : ''">
+                    <p class="font-medium" :class="line.missed ? 'text-zinc-400' : 'text-zinc-900'" x-text="line.label"></p>
+                </td>
+            </tr>
+        </template>
         @foreach ($lines as $line)
             <tr
                 wire:key="{{ $keyPrefix }}-{{ $line['id'] }}"

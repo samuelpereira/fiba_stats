@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\Fpb\FpbGamesImporter;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -78,6 +79,49 @@ HTML),
         ->and($game->home_points)->toBe(80)
         ->and($game->away_points)->toBe(70)
         ->and($game->status)->toBe(GameStatus::Played);
+});
+
+test('fpb games import stores the opponent logo once', function () {
+    Storage::fake('public');
+
+    Http::fake([
+        'https://fpb.test/equipa' => Http::response(<<<'HTML'
+<h3 class="date">15 OUT 2025</h3>
+<a href="/ficha-de-jogo?internalID=1002">
+<div class="image-container">
+<img alt="Logo Test Club Alpha" src="https://logos.test/alpha.jpg">
+</div>
+<span class="fullName">Test Club Alpha</span>
+<div class="image-container">
+<img alt="Logo Test Club Beta" src="https://logos.test/beta.jpg">
+</div>
+<span class="fullName">Test Club Beta</span>
+</a>
+HTML),
+        'https://logos.test/beta.jpg' => Http::response('beta-logo'),
+    ]);
+
+    $team = Team::factory()->create([
+        'name' => 'Test Club Alpha',
+        'fpb_url' => 'https://fpb.test/equipa',
+    ]);
+
+    app(FpbGamesImporter::class)->import($team, prune: false);
+
+    $game = Game::query()->where('fpb_id', '1002')->first();
+
+    expect($game?->opponent_photo)->not->toBeNull();
+    Storage::disk('public')->assertExists((string) $game->opponent_photo);
+
+    app(FpbGamesImporter::class)->import($team, prune: false);
+
+    expect(Storage::disk('public')->allFiles('opponents'))->toHaveCount(1)
+        ->and(collect(Http::recorded())->filter(
+            fn (array $pair): bool => $pair[0]->url() === 'https://logos.test/beta.jpg',
+        )->count())->toBe(1)
+        ->and(collect(Http::recorded())->contains(
+            fn (array $pair): bool => $pair[0]->url() === 'https://logos.test/alpha.jpg',
+        ))->toBeFalse();
 });
 
 test('fpb games re-import without kickoff time keeps existing date time', function () {

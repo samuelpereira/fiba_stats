@@ -11,7 +11,9 @@ use App\Models\Concerns\HasPublicUuid;
 use Carbon\CarbonImmutable;
 use Database\Factories\GameFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -25,6 +27,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $team_id
  * @property string|null $fpb_id
  * @property string $opponent
+ * @property string|null $opponent_photo
+ * @property-read string|null $opponent_photo_url
  * @property CarbonImmutable $date_time
  * @property string|null $place
  * @property HomeAway $home_away
@@ -37,6 +41,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property TeamColor $home_color
  * @property TeamColor $away_color
  * @property bool $mark_shot_location
+ * @property string|null $share_token
  * @property GameStatus $status
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
@@ -45,6 +50,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read Collection<int, Player> $players
  */
 #[Fillable(['team_id', 'fpb_id', 'opponent', 'date_time', 'place', 'home_away', 'competition', 'journey', 'home_points', 'away_points', 'quarter_minutes', 'overtime_minutes', 'home_color', 'away_color', 'mark_shot_location', 'status'])]
+#[Hidden(['share_token'])]
 class Game extends Model
 {
     /** @use HasFactory<GameFactory> */
@@ -67,6 +73,16 @@ class Game extends Model
             'mark_shot_location' => 'boolean',
             'status' => GameStatus::class,
         ];
+    }
+
+    /**
+     * @return Attribute<string|null, never>
+     */
+    protected function opponentPhotoUrl(): Attribute
+    {
+        return Attribute::get(fn (): ?string => $this->opponent_photo === null
+            ? null
+            : asset('storage/'.$this->opponent_photo));
     }
 
     /**

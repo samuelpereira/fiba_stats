@@ -8,6 +8,7 @@ use App\Livewire\Games\Index as GameIndex;
 use App\Livewire\Players\Index as PlayerIndex;
 use App\Livewire\Statistics\Index as StatisticsIndex;
 use App\Models\Club;
+use App\Models\CollectCommand;
 use App\Models\Game;
 use App\Models\GameEvent;
 use App\Models\Player;
@@ -142,6 +143,44 @@ test('field goals can require marking the shot location on the court', function 
         ->and($event->type)->toBe(StatType::TwoPointMade)
         ->and($event->court_x)->toBe(500)
         ->and($event->court_y)->toBe(300);
+});
+
+test('a queued three-point shot is only stored outside the arc', function () {
+    $club = Club::factory()->create();
+    $member = User::factory()->memberOf($club)->create();
+    $game = Game::factory()->create([
+        'team_id' => Team::factory()->create(['club_id' => $club->id])->id,
+        'mark_shot_location' => true,
+    ]);
+    $player = Player::factory()->create(['team_id' => $game->team_id]);
+
+    giveStartingFive($game, $player);
+
+    $payload = [
+        'type' => StatType::ThreePointMade->value,
+        'playerId' => $player->id,
+        'forOpponent' => false,
+        'quarter' => 1,
+        'clock' => '04:15',
+        'courtX' => 500,
+        'courtY' => 300,
+    ];
+
+    statisticsRecord($member, $game)
+        ->call('applyCollectedAction', fake()->uuid(), 'record', $payload)
+        ->assertHasErrors(['shotLocation']);
+
+    expect(GameEvent::query()->where('type', StatType::ThreePointMade)->count())->toBe(0);
+
+    statisticsRecord($member, $game, false)
+        ->call('applyCollectedAction', fake()->uuid(), 'record', [
+            ...$payload,
+            'courtY' => 520,
+        ])
+        ->assertHasNoErrors();
+
+    expect(GameEvent::query()->where('type', StatType::ThreePointMade)->count())->toBe(1)
+        ->and(GameEvent::query()->where('type', StatType::ThreePointMade)->value('court_y'))->toBe(520);
 });
 
 test('the log marks a two as fg, a three as 3pt, and a free throw as ft', function () {
@@ -696,7 +735,8 @@ test('a club member opens a game log by its uuid', function () {
 
     $this->actingAs($member)
         ->get(route('statistics.record', $game))
-        ->assertOk();
+        ->assertOk()
+        ->assertDontSee(__('Turn the screen sideways'));
 
     $this->actingAs($member)
         ->get(route('statistics.record', $game->id))
@@ -847,7 +887,7 @@ test('the foul line shows timeouts used in the current half or overtime', functi
         ->assertSee('1/2')
         ->set('quarter', 3)
         ->assertSee('0/3')
-        ->assertDontSee('1/2')
+        ->assertDontSee('>1/2<', false)
         ->assertDontSee('1/3');
 
     GameEvent::factory()->create([
@@ -938,6 +978,7 @@ test('a stat opens the player picker in a modal over the pad', function () {
         'team_id' => Team::factory()->create(['club_id' => $club->id])->id,
         'opponent' => 'Metro United',
     ]);
+    $game->forceFill(['opponent_photo' => 'opponents/crest.png'])->save();
     $player = Player::factory()->create([
         'team_id' => $game->team_id,
         'name' => 'Jordan Lake',
@@ -952,6 +993,7 @@ test('a stat opens the player picker in a modal over the pad', function () {
         ->assertSee('2P')
         ->assertSee('Jordan')
         ->assertSee('Metro United')
+        ->assertSee('/storage/opponents/crest.png')
         ->call('select', StatType::DefensiveRebound->value)
         ->assertSet('choosingPlayer', true)
         ->assertSee('Defensive Rebound')
@@ -1095,6 +1137,117 @@ test('undo does nothing when the last action ended a period', function () {
         ->assertSet('awaitingQuarterStart', true)
         ->assertSee('end of Q1')
         ->assertSee('stl');
+});
+
+test('a recorded action stores the clock from the pad and undo removes it from the log', function () {
+    $club = Club::factory()->create();
+    $member = User::factory()->memberOf($club)->create();
+    $game = Game::factory()->create([
+        'team_id' => Team::factory()->create(['club_id' => $club->id])->id,
+    ]);
+    $player = Player::factory()->create(['team_id' => $game->team_id, 'name' => 'Alex North']);
+
+    giveStartingFive($game, $player);
+
+    $screen = statisticsRecord($member, $game)
+        ->call('select', StatType::Steal->value)
+        ->call('record', $player->id, '04:15')
+        ->assertSee('04:15')
+        ->assertSee('Alex North')
+        ->assertSee('stl');
+
+    expect(GameEvent::query()->where('type', StatType::Steal)->value('clock'))->toBe('04:15');
+
+    $screen->call('undo');
+
+    expect(GameEvent::query()->where('type', StatType::Steal)->count())->toBe(0)
+        ->and(collect($screen->instance()->lines)->pluck('label'))->not->toContain('stl');
+});
+
+test('the same collected action is stored once with the pad clock', function () {
+    $club = Club::factory()->create();
+    $member = User::factory()->memberOf($club)->create();
+    $game = Game::factory()->create([
+        'team_id' => Team::factory()->create(['club_id' => $club->id])->id,
+    ]);
+    $player = Player::factory()->create(['team_id' => $game->team_id]);
+
+    giveStartingFive($game, $player);
+
+    $id = fake()->uuid();
+    $payload = [
+        'type' => StatType::Steal->value,
+        'playerId' => $player->id,
+        'forOpponent' => false,
+        'quarter' => 1,
+        'clock' => '04:15',
+        'courtX' => null,
+        'courtY' => null,
+    ];
+
+    statisticsRecord($member, $game)
+        ->call('applyCollectedAction', $id, 'record', $payload)
+        ->call('applyCollectedAction', $id, 'record', $payload);
+
+    expect(GameEvent::query()->where('type', StatType::Steal)->count())->toBe(1)
+        ->and(GameEvent::query()->where('type', StatType::Steal)->value('clock'))->toBe('04:15')
+        ->and(CollectCommand::query()->count())->toBe(1);
+});
+
+test('the same undo command removes only one event', function () {
+    $club = Club::factory()->create();
+    $member = User::factory()->memberOf($club)->create();
+    $game = Game::factory()->create([
+        'team_id' => Team::factory()->create(['club_id' => $club->id])->id,
+    ]);
+    $player = Player::factory()->create(['team_id' => $game->team_id]);
+
+    giveStartingFive($game, $player);
+
+    $payload = [
+        'type' => StatType::Steal->value,
+        'playerId' => $player->id,
+        'forOpponent' => false,
+        'quarter' => 1,
+        'clock' => '04:15',
+        'courtX' => null,
+        'courtY' => null,
+    ];
+    $undoId = fake()->uuid();
+
+    statisticsRecord($member, $game)
+        ->call('applyCollectedAction', fake()->uuid(), 'record', $payload)
+        ->call('applyCollectedAction', $undoId, 'undo', [])
+        ->call('applyCollectedAction', $undoId, 'undo', []);
+
+    expect(GameEvent::query()->where('type', StatType::Steal)->count())->toBe(0)
+        ->and(GameEvent::query()->where('type', StatType::QuarterStarted)->count())->toBe(1);
+});
+
+test('a queued record followed by undo leaves the game without that event', function () {
+    $club = Club::factory()->create();
+    $member = User::factory()->memberOf($club)->create();
+    $game = Game::factory()->create([
+        'team_id' => Team::factory()->create(['club_id' => $club->id])->id,
+    ]);
+    $player = Player::factory()->create(['team_id' => $game->team_id]);
+
+    giveStartingFive($game, $player);
+
+    statisticsRecord($member, $game)
+        ->call('applyCollectedAction', fake()->uuid(), 'record', [
+            'type' => StatType::Steal->value,
+            'playerId' => $player->id,
+            'forOpponent' => false,
+            'quarter' => 1,
+            'clock' => '03:10',
+            'courtX' => null,
+            'courtY' => null,
+        ])
+        ->call('applyCollectedAction', fake()->uuid(), 'undo', []);
+
+    expect(GameEvent::query()->where('type', StatType::Steal)->count())->toBe(0)
+        ->and(GameEvent::query()->where('type', StatType::QuarterStarted)->count())->toBe(1);
 });
 
 test('undo removes only an action from the open period', function () {
@@ -1364,7 +1517,7 @@ test('a stopped clock can be changed without changing the period', function () {
     giveStartingFive($game);
 
     statisticsRecord($member, $game)
-        ->assertSee('! $store.gameClock.running && ! $wire.awaitingQuarterStart', false)
+        ->assertSee('! $store.gameClock.running && ! $store.collectQueue.awaitingStart()', false)
         ->set('editingClock', true)
         ->assertDontSee('wire:model="quarter"', false)
         ->assertDontSee('wire:model.live="quarter"', false)
@@ -1417,7 +1570,9 @@ test('the collector asks for the players and the starting five before the pad', 
     }
 
     $screen->call('saveSquad')
-        ->assertSee('Starting five');
+        ->assertSee('Starting five')
+        ->assertSee('Confirm')
+        ->assertDontSee('Confirm lineup');
 
     foreach ($players->take(4) as $player) {
         $screen->call('toggleStarter', $player->id);
@@ -1452,6 +1607,20 @@ test('lineup before the tip-off opens the squad already chosen for the game', fu
         ->assertSee('Players in this game');
 
     expect(GameEvent::query()->where('type', StatType::Substitution)->count())->toBe(0);
+});
+
+test('back from the players in this game returns to the dashboard', function () {
+    $club = Club::factory()->create();
+    $member = User::factory()->memberOf($club)->create();
+    $game = Game::factory()->create([
+        'team_id' => Team::factory()->create(['club_id' => $club->id])->id,
+    ]);
+    Player::factory()->count(6)->create(['team_id' => $game->team_id]);
+
+    statisticsRecord($member, $game)
+        ->assertSee('Players in this game')
+        ->call('leaveSquadSelection')
+        ->assertRedirect(route('dashboard'));
 });
 
 test('a substitution counts only the minutes each player is on the court', function () {
@@ -1673,7 +1842,7 @@ test('game settings keep players who are on the court or already have an action'
 
     $screen = statisticsRecord($member, $game)
         ->call('openGameSettings')
-        ->assertSee('Game settings')
+        ->assertSee('Settings')
         ->call('toggleSettingsPlayer', $starter->id)
         ->call('toggleSettingsPlayer', $benched->id)
         ->call('toggleSettingsPlayer', $replaced->id);

@@ -84,6 +84,10 @@ class FpbGamesImporter
             }
 
             $game->fill($attributes);
+            $this->storeOpponentPhoto(
+                $game,
+                $isHome ? $fixture['away_logo'] : $fixture['home_logo'],
+            );
             $dirty = $game->isDirty();
             $game->save();
 
@@ -97,11 +101,17 @@ class FpbGamesImporter
         $deleted = 0;
 
         if ($prune) {
-            $deleted = Game::query()
+            $stale = Game::query()
                 ->where('team_id', $team->id)
                 ->whereNotNull('fpb_id')
                 ->whereNotIn('fpb_id', $seenIds)
-                ->delete();
+                ->get();
+
+            foreach ($stale as $game) {
+                $this->deleteLocalImage($game->opponent_photo);
+                $game->delete();
+                $deleted++;
+            }
         }
 
         return [
@@ -273,6 +283,8 @@ class FpbGamesImporter
      *     pc: int|null,
      *     pf: int|null,
      *     time: string|null,
+     *     home_logo: string|null,
+     *     away_logo: string|null,
      *     date_time: CarbonImmutable,
      * }>
      */
@@ -310,6 +322,7 @@ class FpbGamesImporter
 
                 $id = $idMatch[1];
 
+                preg_match_all('/<div class="image-container">\s*<img\b[^>]*\bsrc="([^"]*)"/su', $segment, $logos);
                 preg_match_all('/<span class="fullName">\s*(.*?)\s*<\/span>/su', $segment, $names);
 
                 if (count($names[1]) < 2) {
@@ -336,7 +349,20 @@ class FpbGamesImporter
                     'pc' => null,
                     'pf' => null,
                     'time' => null,
+                    'home_logo' => null,
+                    'away_logo' => null,
                 ];
+
+                $homeLogo = $this->absoluteFpbUrl($logos[1][0] ?? null);
+                $awayLogo = $this->absoluteFpbUrl($logos[1][1] ?? null);
+
+                if ($homeLogo !== null) {
+                    $game['home_logo'] = $homeLogo;
+                }
+
+                if ($awayLogo !== null) {
+                    $game['away_logo'] = $awayLogo;
+                }
 
                 if (isset($location[1])) {
                     $game['loc'] = str_replace(' ,', ', ', $this->clean($location[1]));
@@ -360,7 +386,7 @@ class FpbGamesImporter
             }
         }
 
-        /** @var list<array{id: string, year: int, month: int, day: int, home: string, away: string, loc: string|null, comp: string|null, pc: int|null, pf: int|null, time: string|null, date_time: CarbonImmutable}> $fixtures */
+        /** @var list<array{id: string, year: int, month: int, day: int, home: string, away: string, loc: string|null, comp: string|null, pc: int|null, pf: int|null, time: string|null, home_logo: string|null, away_logo: string|null, date_time: CarbonImmutable}> $fixtures */
         $fixtures = array_map(function (array $game): array {
             $game['date_time'] = $this->resolveFixtureDateTime(
                 $game['year'],
@@ -410,6 +436,35 @@ class FpbGamesImporter
         }
 
         return $slug;
+    }
+
+    protected function storeOpponentPhoto(Game $game, ?string $logoUrl): void
+    {
+        if ($logoUrl === null || ($game->opponent_photo !== null && ! $game->isDirty('opponent'))) {
+            return;
+        }
+
+        $downloaded = $this->downloadImage($logoUrl, 'opponents');
+
+        if ($downloaded === null) {
+            return;
+        }
+
+        $this->deleteLocalImage($game->opponent_photo);
+        $game->opponent_photo = $downloaded;
+    }
+
+    protected function absoluteFpbUrl(?string $url): ?string
+    {
+        if ($url === null || trim($url) === '') {
+            return null;
+        }
+
+        if (Str::startsWith($url, ['http://', 'https://'])) {
+            return $url;
+        }
+
+        return 'https://www.fpb.pt/'.ltrim($url, '/');
     }
 
     protected function downloadImage(string $url, string $directory): ?string

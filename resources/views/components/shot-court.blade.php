@@ -13,7 +13,21 @@
     x-data="{
         marker: null,
         submitting: false,
+        serverMade: @js($made),
         made: @js($made),
+        init() {
+            this.$watch('$store.collectQueue.choosingShot', (open) => {
+                this.marker = null;
+
+                if (! open) {
+                    this.made = this.serverMade;
+
+                    return;
+                }
+
+                this.made = ! String(this.$store.collectQueue?.pendingType ?? '').includes('missed');
+            });
+        },
         courtWidth: @js($courtWidth),
         courtHeight: @js($courtHeight),
         markerPositionStyle() {
@@ -50,6 +64,19 @@
             const x = Math.round(location.x);
             const y = Math.round(location.y);
 
+            const queue = this.$store.collectQueue;
+
+            if (queue?.choosingShot && ! queue.allowsShot(queue.pendingType, x, y)) {
+                queue.shotError = true;
+                this.marker = null;
+
+                return;
+            }
+
+            if (queue?.choosingShot) {
+                queue.shotError = false;
+            }
+
             this.marker = { x, y };
 
             await new Promise((resolve) => window.setTimeout(resolve, 500));
@@ -57,11 +84,15 @@
             this.submitting = true;
 
             try {
-                await $wire.recordShotLocation(x, y);
+                if (queue?.choosingShot) {
+                    await queue.recordShot(x, y);
+                } else {
+                    await $wire.recordShotLocation(x, y, this.$store.gameClock?.formatted ?? null);
+                }
             } finally {
                 this.submitting = false;
 
-                if ($wire.choosingShotLocation) {
+                if ($wire.choosingShotLocation || queue?.choosingShot) {
                     this.marker = null;
                 }
             }

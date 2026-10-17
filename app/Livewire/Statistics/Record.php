@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Statistics;
 
+use App\Actions\ApplyCollectedAction;
 use App\Actions\DeleteLatestGameEvent;
 use App\Actions\FinishCollectedGame;
 use App\Actions\RecordGameEvent;
@@ -83,6 +84,14 @@ class Record extends Component
     public bool $confirmingGameFinish = false;
 
     public bool $confirmingExit = false;
+
+    /** @var Collection<int, GameEvent>|null */
+    private ?Collection $loadedEvents = null;
+
+    /** @var array{court: list<int>, seconds: array<int, int>}|null */
+    private ?array $lineupMemo = null;
+
+    private ?string $lineupMemoKey = null;
 
     public bool $quarterEnded = false;
 
@@ -301,6 +310,13 @@ class Record extends Component
         }
     }
 
+    public function leaveSquadSelection(): void
+    {
+        $this->authorize('collect', $this->game);
+
+        $this->redirect(route('dashboard'), navigate: true);
+    }
+
     public function openGameSettings(): void
     {
         $this->authorize('collect', $this->game);
@@ -427,7 +443,7 @@ class Record extends Component
         $this->courtSelection = $this->toggleId($this->courtSelection, $playerId);
     }
 
-    public function confirmSubstitutions(RecordGameEvent $recordGameEvent): void
+    public function confirmSubstitutions(RecordGameEvent $recordGameEvent, ?string $clock = null): void
     {
         $this->authorize('collect', $this->game);
 
@@ -459,6 +475,7 @@ class Record extends Component
         }
 
         $this->resetErrorBag('court');
+        $this->applyCollectedClock($clock);
         $current = $this->lineup()['court'];
         $leaving = [];
         $entering = [];
@@ -481,13 +498,13 @@ class Record extends Component
             $quarter = $this->recordingQuarter((int) $validated['quarter']);
 
             foreach ($leaving as $index => $outgoingId) {
-                $recordGameEvent->substitute(
+                $this->rememberCollectedEvent($recordGameEvent->substitute(
                     $this->game,
                     $entering[$index],
                     $outgoingId,
                     $quarter,
                     $validated['clock'],
-                );
+                ));
             }
         }
 
@@ -496,8 +513,10 @@ class Record extends Component
         unset($this->lines, $this->fouls, $this->timeouts, $this->lineup, $this->squad, $this->courtPlayers, $this->benchPlayers);
     }
 
-    public function record(int $playerId, RecordGameEvent $recordGameEvent): void
+    public function record(int $playerId, RecordGameEvent $recordGameEvent, ?string $clock = null): void
     {
+        $this->applyCollectedClock($clock);
+
         if ($this->shouldMarkShotLocation()) {
             $this->beginShotLocation($playerId, false);
 
@@ -507,8 +526,10 @@ class Record extends Component
         $this->store($recordGameEvent, $playerId, false);
     }
 
-    public function recordOpponent(RecordGameEvent $recordGameEvent): void
+    public function recordOpponent(RecordGameEvent $recordGameEvent, ?string $clock = null): void
     {
+        $this->applyCollectedClock($clock);
+
         if ($this->shouldMarkShotLocation()) {
             $this->beginShotLocation(null, true);
 
@@ -518,9 +539,10 @@ class Record extends Component
         $this->store($recordGameEvent, null, true);
     }
 
-    public function recordShotLocation(int $courtX, int $courtY, RecordGameEvent $recordGameEvent): void
+    public function recordShotLocation(int $courtX, int $courtY, RecordGameEvent $recordGameEvent, ?string $clock = null): void
     {
         $this->authorize('collect', $this->game);
+        $this->applyCollectedClock($clock);
 
         if (! $this->periodIsOpen() || ! $this->choosingShotLocation || $this->pendingType === null) {
             return;
@@ -561,9 +583,10 @@ class Record extends Component
         $this->choosingTimeout = true;
     }
 
-    public function recordTimeout(string $side, RecordGameEvent $recordGameEvent): void
+    public function recordTimeout(string $side, RecordGameEvent $recordGameEvent, ?string $clock = null): void
     {
         $this->authorize('collect', $this->game);
+        $this->applyCollectedClock($clock);
 
         if (! $this->periodIsOpen()) {
             return;
@@ -577,14 +600,14 @@ class Record extends Component
 
         $validated = $this->validate($this->rules());
 
-        $recordGameEvent->handle(
+        $this->rememberCollectedEvent($recordGameEvent->handle(
             $this->game,
             null,
             StatType::Timeout,
             $this->recordingQuarter((int) $validated['quarter']),
             $validated['clock'],
             $calledBy,
-        );
+        ));
 
         $this->choosingTimeout = false;
         unset($this->lines, $this->timeouts, $this->lineup);
@@ -699,7 +722,7 @@ class Record extends Component
     {
         $this->authorize('collect', $this->game);
 
-        if (! $this->awaitingQuarterStart) {
+        if (! $this->awaitingQuarterStart || ! $this->nextPeriodCanStart()) {
             return;
         }
 
@@ -710,9 +733,10 @@ class Record extends Component
         $this->js("window.Alpine.store('gameClock')?.begin('{$clock}')");
     }
 
-    public function recordQuarterStart(RecordGameEvent $recordGameEvent): void
+    public function recordQuarterStart(RecordGameEvent $recordGameEvent, ?string $clock = null): void
     {
         $this->authorize('collect', $this->game);
+        $this->applyCollectedClock($clock);
 
         if ($this->awaitingQuarterStart || $this->quarterEnded || $this->clockIsZero()) {
             return;
@@ -829,6 +853,7 @@ class Record extends Component
         $this->editingPlayerId = null;
         $this->editingForOpponent = false;
 
+        $this->forgetCollectedEvents();
         unset($this->lines, $this->fouls);
     }
 
@@ -844,13 +869,43 @@ class Record extends Component
         $this->editingForOpponent = false;
     }
 
+    public function hydrate(): void
+    {
+        $this->forgetCollectedEvents();
+    }
+
     public function undo(DeleteLatestGameEvent $deleteLatestGameEvent): void
     {
         $this->authorize('collect', $this->game);
 
         $deleteLatestGameEvent->handle($this->game);
+        $this->forgetCollectedEvents();
 
         unset($this->lines, $this->fouls, $this->timeouts, $this->lineup, $this->canUndo);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    public function applyCollectedAction(string $id, string $operation, array $payload, ApplyCollectedAction $action): void
+    {
+        $this->authorize('collect', $this->game);
+
+        $action->handle($this->game, $id, $operation, $payload);
+
+        $this->forgetCollectedEvents();
+        $this->overtimeByQuarter = null;
+        $this->restorePeriod();
+
+        if ($operation === 'edit') {
+            $this->editingAction = false;
+            $this->editingEventId = null;
+            $this->editingType = null;
+            $this->editingPlayerId = null;
+            $this->editingForOpponent = false;
+        }
+
+        unset($this->lines, $this->fouls, $this->timeouts, $this->lineup, $this->squad, $this->courtPlayers, $this->benchPlayers, $this->canUndo, $this->periodIsOpen, $this->gameStarted);
     }
 
     #[Computed]
@@ -879,7 +934,15 @@ class Record extends Component
     #[Computed]
     public function lineup(): array
     {
-        return $this->game->lineupState($this->clock, $this->periodIsOpen());
+        $key = $this->clock.'|'.(int) $this->periodIsOpen().'|'.$this->collectedEvents()->count();
+
+        if ($this->lineupMemoKey === $key && $this->lineupMemo !== null) {
+            return $this->lineupMemo;
+        }
+
+        $this->lineupMemoKey = $key;
+
+        return $this->lineupMemo = $this->game->lineupState($this->clock, $this->periodIsOpen());
     }
 
     /**
@@ -980,11 +1043,7 @@ class Record extends Component
     public function fouls(): array
     {
         $periods = $this->game->periodsByEventId();
-        $events = GameEvent::query()
-            ->where('game_id', $this->game->id)
-            ->where('type', StatType::Foul)
-            ->orderBy('id')
-            ->get(['id', 'player_id', 'home_away']);
+        $events = $this->collectedEvents()->where('type', StatType::Foul);
 
         $players = [];
         $team = 0;
@@ -1027,11 +1086,9 @@ class Record extends Component
     {
         $window = $this->timeoutWindow($this->quarter);
 
-        $events = GameEvent::query()
-            ->where('game_id', $this->game->id)
+        $events = $this->collectedEvents()
             ->where('type', StatType::Timeout)
-            ->whereIn('quarter', $window['quarters'])
-            ->get(['home_away']);
+            ->whereIn('quarter', $window['quarters']);
 
         $team = 0;
         $opponent = 0;
@@ -1103,11 +1160,7 @@ class Record extends Component
      */
     private function lineItems(): array
     {
-        $events = GameEvent::query()
-            ->with(['player', 'outgoingPlayer'])
-            ->where('game_id', $this->game->id)
-            ->orderBy('id')
-            ->get();
+        $events = $this->collectedEvents();
 
         $points = [];
         $shotsMade = [];
@@ -1189,9 +1242,109 @@ class Record extends Component
         return array_reverse($lines);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    private function collectQueueConfig(): array
+    {
+        $labels = [];
+        $editableTypes = [];
+
+        foreach (StatType::cases() as $stat) {
+            $labels[$stat->value] = __($stat->logLabel());
+
+            if (! $stat->isEditableAction()) {
+                continue;
+            }
+
+            $tone = match (true) {
+                $stat->isSolid() => 'made',
+                $stat->isMiss() => 'missed',
+                default => 'plain',
+            };
+
+            $editableTypes[] = [
+                'value' => $stat->value,
+                'label' => __($stat->logLabel()),
+                'tone' => $tone,
+            ];
+        }
+
+        return [
+            'gameId' => $this->game->id,
+            'quarter' => $this->quarter,
+            'awaitingQuarterStart' => $this->awaitingQuarterStart,
+            'quarterEnded' => $this->quarterEnded,
+            'periodOpen' => $this->periodIsOpen(),
+            'gameStarted' => $this->gameStarted(),
+            'canUndo' => $this->canUndo(),
+            'court' => $this->lineup()['court'],
+            'markShotLocation' => $this->game->mark_shot_location,
+            'quarterMinutes' => $this->game->quarter_minutes,
+            'overtimeMinutes' => $this->game->overtime_minutes,
+            'finished' => $this->game->status === GameStatus::Played,
+            'teamPoints' => $this->teamPoints(),
+            'opponentPoints' => $this->opponentDisplayPoints(),
+            'homeAway' => $this->game->home_away->value,
+            'opponentName' => $this->game->opponent,
+            'teamName' => $this->game->team->name,
+            'homeColor' => $this->game->home_color->hex(),
+            'awayColor' => $this->game->away_color->hex(),
+            'shotCourt' => [
+                'width' => ShotCourt::Width,
+                'left' => ShotCourt::CourtLeft,
+                'right' => ShotCourt::CourtRight,
+                'top' => ShotCourt::BaselineY,
+                'bottom' => ShotCourt::HalfCourtY,
+                'hoopX' => ShotCourt::HoopX,
+                'hoopY' => ShotCourt::hoopY(),
+                'cornerX' => ShotCourt::cornerX(),
+                'radius' => ShotCourt::threePointRadius(),
+            ],
+            'fieldGoals' => array_values(array_map(
+                fn (StatType $stat): string => $stat->value,
+                array_filter(StatType::cases(), fn (StatType $stat): bool => $stat->isFieldGoal()),
+            )),
+            'roster' => $this->orderedSquad()
+                ->map(fn (Player $player): array => [
+                    'id' => $player->id,
+                    'name' => $player->name,
+                    'number' => $player->number,
+                    'label' => $this->loggedPlayer($player),
+                    'fouls' => $this->fouls()['players'][$player->id] ?? 0,
+                ])
+                ->values()
+                ->all(),
+            'labels' => $labels,
+            'pickerTitles' => [
+                StatType::DefensiveRebound->value => __(StatType::DefensiveRebound->pickerTitle()),
+                StatType::OffensiveRebound->value => __(StatType::OffensiveRebound->pickerTitle()),
+                StatType::Turnover->value => __(StatType::Turnover->pickerTitle()),
+                StatType::Steal->value => __(StatType::Steal->pickerTitle()),
+                StatType::Assist->value => __(StatType::Assist->pickerTitle()),
+                StatType::Block->value => __(StatType::Block->pickerTitle()),
+                StatType::Foul->value => __(StatType::Foul->pickerTitle()),
+            ],
+            'editableTypes' => $editableTypes,
+            'templates' => [
+                'startOfQuarter' => __('Start of Q:quarter', ['quarter' => ':quarter']),
+                'startOfOvertime' => __('Start of OT:overtime', ['overtime' => ':overtime']),
+                'endQuarter' => __('End Q:quarter', ['quarter' => ':quarter']),
+                'startQuarter' => __('Start Q:quarter', ['quarter' => ':quarter']),
+                'endOvertime' => __('End OT:overtime', ['overtime' => ':overtime']),
+                'startOvertime' => __('Start OT:overtime', ['overtime' => ':overtime']),
+                'endQuarterQuestion' => __('Do you want to end Q:quarter?', ['quarter' => ':quarter']),
+                'endOvertimeQuestion' => __('Do you want to end OT:overtime?', ['overtime' => ':overtime']),
+                'saving' => __('Saving…'),
+                'markFive' => __('Mark 5 players.'),
+            ],
+        ];
+    }
+
     public function render(): View
     {
         return view('livewire.statistics.record', [
+            'collectQueue' => $this->collectQueueConfig(),
             'teamName' => $this->game->team->name,
             'opponentName' => $this->game->opponent,
             'opponentPoints' => $this->opponentDisplayPoints(),
@@ -1250,7 +1403,7 @@ class Record extends Component
 
         $validated = $this->validate($this->rules());
 
-        $recordGameEvent->handle(
+        $this->rememberCollectedEvent($recordGameEvent->handle(
             $this->game,
             $playerId,
             $type,
@@ -1259,7 +1412,7 @@ class Record extends Component
             $this->game->sideFor($forOpponent),
             $courtX,
             $courtY,
-        );
+        ));
 
         $this->pendingType = null;
         $this->choosingPlayer = false;
@@ -1294,7 +1447,7 @@ class Record extends Component
 
     private function recordPeriod(RecordGameEvent $recordGameEvent, StatType $type, int $quarter, string $clock): void
     {
-        $recordGameEvent->handle($this->game, null, $type, $quarter, $clock);
+        $this->rememberCollectedEvent($recordGameEvent->handle($this->game, null, $type, $quarter, $clock));
 
         unset($this->lines, $this->lineup);
     }
@@ -1462,6 +1615,11 @@ class Record extends Component
         return in_array($this->clock, ['00:00', '0:00'], true);
     }
 
+    public function nextPeriodCanStart(): bool
+    {
+        return ! ($this->game->status === GameStatus::Played && $this->awaitingQuarterStart && $this->quarter > 4);
+    }
+
     private function openingClock(): string
     {
         $minutes = $this->periodIsOvertime($this->quarter)
@@ -1530,6 +1688,10 @@ class Record extends Component
 
     private function awaitingPeriodLabel(): string
     {
+        if (! $this->nextPeriodCanStart()) {
+            return $this->periodName($this->quarter - 1);
+        }
+
         if ($this->periodIsOvertime($this->quarter)) {
             return __('Start of OT:overtime', ['overtime' => $this->quarter - 4]);
         }
@@ -1604,10 +1766,55 @@ class Record extends Component
 
     private function pointsFor(bool $forOpponent): int
     {
-        return (int) GameEvent::query()
-            ->where('game_id', $this->game->id)
+        return (int) $this->collectedEvents()
             ->where('home_away', $this->game->sideFor($forOpponent))
-            ->get()
             ->sum(fn (GameEvent $event): int => $event->type->points());
+    }
+
+    /**
+     * @return Collection<int, GameEvent>
+     */
+    private function collectedEvents(): Collection
+    {
+        return $this->loadedEvents ??= GameEvent::query()
+            ->with(['player', 'outgoingPlayer'])
+            ->where('game_id', $this->game->id)
+            ->orderBy('id')
+            ->get();
+    }
+
+    private function rememberCollectedEvent(GameEvent $event): void
+    {
+        $this->lineupMemo = null;
+        $this->lineupMemoKey = null;
+
+        if (! $this->loadedEvents instanceof Collection) {
+            return;
+        }
+
+        $event->loadMissing(['player', 'outgoingPlayer']);
+        $this->loadedEvents->push($event);
+    }
+
+    private function forgetCollectedEvents(): void
+    {
+        $this->loadedEvents = null;
+        $this->lineupMemo = null;
+        $this->lineupMemoKey = null;
+    }
+
+    private function applyCollectedClock(?string $clock): void
+    {
+        if ($clock === null || preg_match('/^\d{1,2}:\d{2}$/', $clock) !== 1) {
+            return;
+        }
+
+        [$minutes, $seconds] = explode(':', $clock);
+
+        if ((int) $minutes > 99 || (int) $seconds > 59) {
+            return;
+        }
+
+        $this->clock = sprintf('%02d:%02d', (int) $minutes, (int) $seconds);
     }
 }

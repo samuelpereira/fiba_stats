@@ -18,6 +18,7 @@ use App\Livewire\Seasons\Edit as EditSeason;
 use App\Livewire\Seasons\Index as SeasonIndex;
 use App\Livewire\Statistics\Index as StatisticsIndex;
 use App\Livewire\Statistics\Record as StatisticsRecord;
+use App\Livewire\Statistics\Shared;
 use App\Livewire\Statistics\Show;
 use App\Livewire\Teams\Create as CreateTeam;
 use App\Livewire\Teams\Edit as EditTeam;
@@ -34,6 +35,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
+
+Route::livewire('s/{game:share_token}', Shared::class)->name('statistics.shared');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire('dashboard', Dashboard::class)->name('dashboard');

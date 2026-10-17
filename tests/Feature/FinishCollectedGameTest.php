@@ -97,6 +97,34 @@ test('exit after the fourth quarter ends can leave without finishing the game', 
     expect($game->refresh()->status)->toBe(GameStatus::Scheduled);
 });
 
+test('a finished game does not offer to start the next quarter', function () {
+    $club = Club::factory()->create();
+    $member = User::factory()->memberOf($club)->create();
+    $game = Game::factory()->create([
+        'team_id' => Team::factory()->create(['club_id' => $club->id])->id,
+        'status' => GameStatus::Played,
+    ]);
+
+    giveStartingFive($game);
+
+    $game->events()->create([
+        'type' => StatType::QuarterEnded,
+        'quarter' => 4,
+        'clock' => '00:00',
+    ]);
+
+    grantStatisticsTeamAccess($member, $game);
+
+    Livewire::actingAs($member)
+        ->test(StatisticsRecord::class, ['game' => $game])
+        ->assertSet('quarter', 5)
+        ->assertSet('awaitingQuarterStart', true)
+        ->assertDontSee('Start Q5')
+        ->call('startQuarter')
+        ->assertSet('quarter', 5)
+        ->assertSet('awaitingQuarterStart', true);
+});
+
 test('played game scoreboard uses stored totals once for each team', function () {
     $club = Club::factory()->create();
     $member = User::factory()->memberOf($club)->create();

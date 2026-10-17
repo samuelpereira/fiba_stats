@@ -22,13 +22,16 @@ test('the statistics button opens the game box score', function () {
     $team = Team::factory()->create([
         'club_id' => $club->id,
         'name' => 'ADC',
+        'photo' => 'teams/badge.png',
     ]);
     $member = User::factory()->memberOf($club)->withTeams($team)->create();
     $game = Game::factory()->create([
         'team_id' => $team->id,
         'opponent' => 'Metro United',
         'home_away' => HomeAway::Home,
+        'date_time' => '2026-10-02 20:30:00',
     ]);
+    $game->forceFill(['opponent_photo' => 'opponents/crest.png'])->save();
     $player = Player::factory()->create([
         'team_id' => $team->id,
         'name' => 'Jordan Lake',
@@ -112,7 +115,17 @@ test('the statistics button opens the game box score', function () {
     $this->actingAs($member)
         ->get(route('statistics.show', ['game' => $game, 'from' => 'dashboard']))
         ->assertOk()
-        ->assertSee(route('dashboard'), false);
+        ->assertSee(route('dashboard'), false)
+        ->assertDontSee(__('Turn the screen sideways'))
+        ->assertSee('ADC 2 vs Metro United 3', false)
+        ->assertDontSee('ADC 2 vs Metro United 3 - ', false)
+        ->assertSeeInOrder(['Matchup', 'Box score'])
+        ->assertSee('/storage/opponents/crest.png', false);
+
+    $this->actingAs($member)
+        ->get('http://127.0.0.1:8082'.route('statistics.show', ['game' => $game, 'from' => 'dashboard'], false))
+        ->assertSee('http://127.0.0.1:8082/storage/teams/badge.png', false)
+        ->assertDontSee('http://localhost:8000/storage/teams/badge.png', false);
 
     $this->actingAs($member)
         ->get(route('statistics.show', ['game' => $game, 'from' => 'statistics']))
@@ -126,17 +139,18 @@ test('the statistics button opens the game box score', function () {
         ->test(StatisticsShow::class, ['game' => $game])
         ->assertSee('ADC')
         ->assertSee('Metro United')
+        ->assertDontSee('2 Oct 2026')
         ->assertSee('Jordan Lake')
         ->assertSee('Pedro Silva')
         ->assertSee('On court')
         ->assertSee('Bench')
+        ->assertViewHas('courtPlayers', fn (array $players): bool => count($players) === 1 && $players[0]['name'] === 'Jordan Lake')
+        ->assertViewHas('benchPlayers', fn (array $players): bool => count($players) === 1 && $players[0]['name'] === 'Pedro Silva')
         ->assertSee('Q1')
         ->assertSee('T')
         ->assertSee('F')
         ->assertViewHas('homePeriodFouls', 2)
         ->assertViewHas('awayPeriodFouls', 1)
-        ->assertViewHas('courtPlayers', fn (array $players): bool => count($players) === 1 && $players[0]['name'] === 'Jordan Lake')
-        ->assertViewHas('benchPlayers', fn (array $players): bool => count($players) === 1 && $players[0]['name'] === 'Pedro Silva')
         ->assertSee('1-1')
         ->assertSee('Matchup')
         ->assertSee('Shot Charts')

@@ -2,16 +2,16 @@
 
 namespace App\Livewire\Statistics;
 
+use App\Actions\ShareGameStatistics;
 use App\Enums\HomeAway;
 use App\Models\Game;
+use Flux\Flux;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
-use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Title('Statistics')]
-#[Layout('layouts.collect')]
+#[Layout('layouts.collect', ['titleAsGiven' => true])]
 class Show extends Component
 {
     #[Locked]
@@ -24,6 +24,11 @@ class Show extends Component
     public string $mobileShotChartFilter = 'home|team';
 
     public string $backUrl;
+
+    #[Locked]
+    public bool $shared = false;
+
+    public bool $sharing = false;
 
     public function mount(Game $game): void
     {
@@ -41,6 +46,37 @@ class Show extends Component
             'record' => route('statistics.record', $this->game),
             default => route('statistics.index'),
         };
+    }
+
+    public function openShare(ShareGameStatistics $share): void
+    {
+        $this->guardShare();
+        $share->publish($this->game);
+        $this->sharing = true;
+    }
+
+    public function rotateShare(ShareGameStatistics $share): void
+    {
+        $this->guardShare();
+        $share->rotate($this->game);
+
+        Flux::toast(variant: 'success', text: __('New share link created.'));
+    }
+
+    public function revokeShare(ShareGameStatistics $share): void
+    {
+        $this->guardShare();
+        $share->revoke($this->game);
+        $this->sharing = false;
+
+        Flux::toast(text: __('Sharing stopped.'));
+    }
+
+    public function copiedShareLink(): void
+    {
+        $this->guardShare();
+
+        Flux::toast(variant: 'success', text: __('Link copied.'));
     }
 
     public function render(): View
@@ -67,6 +103,8 @@ class Show extends Component
 
         $homeLine = $weAreHome ? $boxScore['team'] : $boxScore['opponent'];
         $awayLine = $weAreHome ? $boxScore['opponent'] : $boxScore['team'];
+        $homeName = $weAreHome ? $this->game->team->name : $this->game->opponent;
+        $awayName = $weAreHome ? $this->game->opponent : $this->game->team->name;
         [$courtPlayers, $benchPlayers] = $this->splitSquad($boxScore['players'], $boxScore['court']);
         $boxScore['players'] = $this->sortBoxScorePlayers($boxScore['players']);
 
@@ -87,14 +125,21 @@ class Show extends Component
             'awayColor' => $this->game->away_color->hex(),
             'teamName' => $this->game->team->name,
             'opponentName' => $this->game->opponent,
-            'homeName' => $weAreHome ? $this->game->team->name : $this->game->opponent,
-            'awayName' => $weAreHome ? $this->game->opponent : $this->game->team->name,
-            'homeLogoUrl' => $weAreHome ? $this->game->team->photo_url : null,
-            'awayLogoUrl' => $weAreHome ? null : $this->game->team->photo_url,
-            'homeInitials' => $this->initials($weAreHome ? $this->game->team->name : $this->game->opponent),
-            'awayInitials' => $this->initials($weAreHome ? $this->game->opponent : $this->game->team->name),
+            'homeName' => $homeName,
+            'awayName' => $awayName,
+            'homeLogoUrl' => $weAreHome ? $this->game->team->photo_url : $this->game->opponent_photo_url,
+            'awayLogoUrl' => $weAreHome ? $this->game->opponent_photo_url : $this->game->team->photo_url,
+            'homeInitials' => $this->initials($homeName),
+            'awayInitials' => $this->initials($awayName),
+            'gameDate' => $this->game->date_time->isoFormat('D MMM YYYY'),
             'mobileShotChartSide' => $this->mobileShotChartSide(),
-        ]);
+            'shareUrl' => $this->shareUrl(),
+        ])->title($this->scoreTitle($homeName, $homeTotal, $awayName, $awayTotal));
+    }
+
+    private function scoreTitle(string $homeName, int $homeTotal, string $awayName, int $awayTotal): string
+    {
+        return $homeName.' '.$homeTotal.' vs '.$awayName.' '.$awayTotal;
     }
 
     public function updatedMobileShotChartFilter(): void
@@ -125,6 +170,22 @@ class Show extends Component
         [$side] = explode('|', $this->mobileShotChartFilter, 2);
 
         return $side === 'away' ? 'away' : 'home';
+    }
+
+    private function guardShare(): void
+    {
+        abort_if($this->shared, 404);
+
+        $this->authorize('collect', $this->game);
+    }
+
+    private function shareUrl(): ?string
+    {
+        if ($this->game->share_token === null) {
+            return null;
+        }
+
+        return route('statistics.shared', ['game' => $this->game->share_token]);
     }
 
     /**
